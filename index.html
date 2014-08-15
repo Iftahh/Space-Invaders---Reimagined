@@ -9,21 +9,25 @@
 <style type="text/css">
 body {
 	padding: 0;
-	margin: 0;
 }
 
-body > canvas {
+#canvas_cont canvas {
 	position: absolute;
 	-webkit-user-select: none;
 }
+
 </style>
 </head>
 <body>
-
+<p>Click to add Blue, Ctrl+Click to add Green</p>
+<div id="canvas_cont">
 	<canvas id='b' width=800 height=600 ></canvas>
 	<canvas id='c' width=800 height=600 ></canvas>
-	<canvas id='d' width=800 height=600 ></canvas>
+	<canvas id='voronoiCanvas' width=800 height=600 ></canvas>
+</div>
 
+	<script type="text/javascript" src="rhill-voronoi-core.js"></script>
+	<script type="text/javascript" src="voronoi.js"></script>
 	<script type="text/javascript" src="game.js"></script>
 
 </body>

@@ -27,6 +27,7 @@ var VoronoiDemo = {
 	init: function() {
 		var me = this;
 		me.ice_pattern = C.createPattern(ice_canvas, 'repeat');
+		me.grass_pattern = C.createPattern(grass_canvas,'repeat');
 		this.canvas = document.getElementById('voronoiCanvas');
 		this.canvas.onmousemove = function(e) {
 			if (!me.sites.length) {return;}
@@ -39,7 +40,7 @@ var VoronoiDemo = {
 			};
 		this.canvas.onclick = function(e) {
 			var mouse = me.normalizeEventCoords(me.canvas,e);
-			me.addSite(mouse.x,mouse.y);
+			me.addSite(mouse.x,mouse.y, e.ctrlKey? 1: 0);
 			me.render();
 			};
 		//this.randomSites(10,true);
@@ -64,8 +65,8 @@ var VoronoiDemo = {
 		this.diagram = this.voronoi.compute(this.sites, this.bbox);
 		},
 
-	addSite: function(x,y) {
-		this.sites.push({x:x,y:y});
+	addSite: function(x,y, c) {
+		this.sites.push({x:x,y:y, c:c});
 		this.diagram = this.voronoi.compute(this.sites, this.bbox);
 		},
 
@@ -105,51 +106,61 @@ var VoronoiDemo = {
 				ctx.fill();
 				}
 			}
-		ctx.fillStyle = this.patten;
-		for (var i=1; i<nSites; i++) {
-			var cell = this.diagram.cells[sites[i].voronoiId];
-			// there is no guarantee a Voronoi cell will exist for any
-			// particular site
-			if (cell) {
-				var halfedges = cell.halfedges,
-					nHalfedges = halfedges.length;
-				if (nHalfedges > 2) {
-					v = halfedges[0].getStartpoint();
-					ctx.beginPath();
-					ctx.moveTo(v.x,v.y);
-					for (var iHalfedge=0; iHalfedge<nHalfedges; iHalfedge++) {
-						v = halfedges[iHalfedge].getEndpoint();
-						ctx.lineTo(v.x,v.y);
+		for (var c=0; c<2; c++) {
+			ctx.beginPath();
+			
+			for (var i=1; i<nSites; i++) {
+				var cell = this.diagram.cells[sites[i].voronoiId];
+				if (sites[i].c == c) {
+					// handle only sites of this color for a single fill
+					// there is no guarantee a Voronoi cell will exist for any
+					// particular site
+					if (cell) {
+						var halfedges = cell.halfedges,
+							nHalfedges = halfedges.length;
+						if (nHalfedges > 2) {
+							v = halfedges[0].getStartpoint();
+							ctx.moveTo(v.x,v.y);
+							for (var iHalfedge=0; iHalfedge<nHalfedges; iHalfedge++) {
+								v = halfedges[iHalfedge].getEndpoint();
+								ctx.lineTo(v.x,v.y);
+							}
 						}
-					ctx.fillStyle = this.ice_pattern;
-					ctx.fill();
 					}
 				}
-		}
-		ctx.strokeStyle='#000';
-		// edges
-		var edges = this.diagram.edges,
-			nEdges = edges.length,
-			v;
-		if (nEdges) {
-			var edge;
-			ctx.beginPath();
-			while (nEdges--) {
-				edge = edges[nEdges];
-				v = edge.va;
-				ctx.moveTo(v.x,v.y);
-				v = edge.vb;
-				ctx.lineTo(v.x,v.y);
-				}
-			ctx.stroke();
 			}
+			if (c == 0) {
+				ctx.fillStyle = this.ice_pattern;
+			}
+			else {
+				ctx.fillStyle = this.grass_pattern;
+			}
+			ctx.fill();
+		}
+//		ctx.strokeStyle='#000';
+//		// edges
+//		var edges = this.diagram.edges,
+//			nEdges = edges.length,
+//			v;
+//		if (nEdges) {
+//			var edge;
+//			ctx.beginPath();
+//			while (nEdges--) {
+//				edge = edges[nEdges];
+//				v = edge.va;
+//				ctx.moveTo(v.x,v.y);
+//				v = edge.vb;
+//				ctx.lineTo(v.x,v.y);
+//				}
+//			ctx.stroke();
+//			}
 		// draw sites
 		var site;
 		ctx.beginPath();
-		ctx.fillStyle = '#44f';
+		ctx.fillStyle = '#ff4';
 		while (nSites--) {
 			site = sites[nSites];
-			ctx.rect(site.x-2/3,site.y-2/3,2,2);
+			ctx.rect(site.x-1,site.y-1,3,3);
 			}
 		ctx.fill();
 		},
