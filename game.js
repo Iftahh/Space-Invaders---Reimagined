@@ -115,46 +115,48 @@ var painty = function(buffer, base_min, base_top, dirx, diry, color_step, seed_c
 	return fu;
 }
 
+if (false) {
+	
+	//
+	ice_canvas = r2c(width, height, function(ctx, canvas) {
+		var imgData=ctx.createImageData(width,height);
+	    var d = imgData.data;
+	    var red = painty([], 60,110, 3,3, -4, 100);
+	    var green = painty([], 80,160, 3,3, -2, 500);
+	    var blue = painty([], 20, 40, 3,3, 3, 1000);
+	    var i=0; // pixel index
+	    for (var y=0;y<height;y++) {
+	    	for (var x=0; x<width; x++) {
+	    		d[i++] = red(x,y)
+	    		d[i++] = green(x,y);
+	    		d[i++] = blue(x,y);    		
+	    		d[i++] = OA;
+	    	}
+	    }
+	    ctx.putImageData(imgData,0,0);
+	})
+	
+	
+	
+	grass_canvas = r2c(width, height, function(ctx, canvas) {
+		var imgData=ctx.createImageData(width,height);
+	    var d = imgData.data;
+	    var red = painty([], 60,150, -3,3, -2, 100);
+	    var green = painty([], 40,90, -3,3, 3, 200);
+	    var blue = painty([], 70, 120, -3,3, -3, 100);
+	    var i=0; // pixel index
+	    for (var y=0;y<height;y++) {
+	    	for (var x=0; x<width; x++) {
+	    		d[i++] = red(x,y)
+	    		d[i++] = green(x,y);
+	    		d[i++] = blue(x,y);    		
+	    		d[i++] = OA;
+	    	}
+	    }
+	    ctx.putImageData(imgData,0,0);
+	})
 
-//
-ice_canvas = r2c(width, height, function(ctx, canvas) {
-	var imgData=ctx.createImageData(width,height);
-    var d = imgData.data;
-    var red = painty([], 60,110, 3,3, -4, 100);
-    var green = painty([], 80,160, 3,3, -2, 500);
-    var blue = painty([], 20, 40, 3,3, 3, 1000);
-    var i=0; // pixel index
-    for (var y=0;y<height;y++) {
-    	for (var x=0; x<width; x++) {
-    		d[i++] = red(x,y)
-    		d[i++] = green(x,y);
-    		d[i++] = blue(x,y);    		
-    		d[i++] = OA;
-    	}
-    }
-    ctx.putImageData(imgData,0,0);
-})
-
-
-
-grass_canvas = r2c(width, height, function(ctx, canvas) {
-	var imgData=ctx.createImageData(width,height);
-    var d = imgData.data;
-    var red = painty([], 60,150, -3,3, -2, 100);
-    var green = painty([], 40,90, -3,3, 3, 200);
-    var blue = painty([], 70, 120, -3,3, -3, 100);
-    var i=0; // pixel index
-    for (var y=0;y<height;y++) {
-    	for (var x=0; x<width; x++) {
-    		d[i++] = red(x,y)
-    		d[i++] = green(x,y);
-    		d[i++] = blue(x,y);    		
-    		d[i++] = OA;
-    	}
-    }
-    ctx.putImageData(imgData,0,0);
-})
-
+}
 
 rdp = [148, 1000, 500, 400];
 grp = [610, 60, 864, 860];
@@ -180,6 +182,82 @@ wavy = function(x,y,p, yp1, yp2){
 //    }
 //    ctx.putImageData(imgData,0,0);
 //})
+
+function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
+	var di = 0; // destination index
+	var i=0;
+	for (var y=0; y<height; y++) {
+		for (var x=0; x<width; x++)  {
+			var dx = displace_x[i];
+			var dy = displace_y[i];
+			i++;
+			var oi = 4*((x + dx+width)%width + ((y+dy+height)%height)*width);
+			new_data[di++] = pixel_data[oi++];
+			new_data[di++] = pixel_data[oi++];
+			new_data[di++] = pixel_data[oi++];
+			new_data[di++] = pixel_data[oi];
+		}
+	}
+	
+}
+
+water_canvas = function(P) {
+	return r2c(width, height, function(ctx, canvas) {
+		
+		var wp=[];
+		var red = painty([], 60,110, 3,3, -4, 100);
+	    var green = painty([], 80,160, 3,3, -2, 500);
+	    var blue = painty([], 20, 40, 3,3, 3, 1000);
+	    var i=0; // pixel index
+	    for (var y=0;y<height;y++) {
+	    	for (var x=0; x<width; x++) {
+	    		wp[i++] = ((x/10)&7)*10 + ((y/10)&7)*10; //red(x,y)
+	    		wp[i++] = ((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
+	    		wp[i++] = ((x/30)&7)*10 + ((y/30)&7)*10;//blue(x,y);    		
+	    		wp[i++] = OA;
+	    	}
+	    }
+	    
+	    var displace_x = [];
+	    var displace_y = [];
+	    i=0; // pixel index
+	    for (var y=0;y<height;y++) {
+	    	for (var x=0; x<width; x++) {
+	    		displace_x[i] = round((5+3*y/height)*sin(TPI*10*(x+y)/width));
+	    		displace_y[i] = round(5*sin(PI+TPI*10*x/width));
+	    		i++;
+	    	}
+	    }
+	    
+		var imgData=ctx.createImageData(width,height);
+	    var d = imgData.data;
+	    
+	    displace(displace_x, displace_y, wp, d, width, height)
+//	    var i=0; // pixel index
+//		for (var y=0;y<height;y++) {
+//			var s=3/(y+250);
+//			var yy0 = sq(y-700)*5;
+//		    for (var x=0; x<width; x++) {
+//		    	var yy=(y+sin((x*x + yy0)/100/height+P)*15)*s;
+//		    	
+//		    	var _x = (width*(x-yy)/s)<<0;
+//		    	var _y = (height*(y-yy)/s)<<0;
+//		    	
+//		    	
+//		    	d[i++] = wp[_x+_y*width]//( (((x+width)*s+yy)&1)+(((2*width-x)*s+yy)&1))*127;
+//		    	d[i++] = wp[_x+_y*width+1]//( ((5*((x+width)*s+yy))&1) + ((5*((width*2-x)*s+yy))&1))*127;
+//		  		d[i++] = wp[_x+_y*width+2]//(((29*((x+width)*s+yy))&1)+((29*((width*2-x)*s+yy))&1))*127;
+//		    	// flat
+//	//	    	d[i++] = ( (((x+width)*s)&1)+(((2*width-x)*s)&1))*127;
+//	//	    	d[i++] = ( ((5*((x+width)*s))&1) + ((5*((width*2-x)*s))&1))*127;
+//	//	  		d[i++] = (((29*((x+width)*s))&1)+((29*((width*2-x)*s))&1))*127;
+//	//	 		
+//		  		d[i++] = OA;
+//		  	}
+//		  }
+		  ctx.putImageData(imgData,0,0);
+		})
+}
 
 
 MOUSE_POS = {x:0, y:0}
@@ -273,21 +351,25 @@ Filters = {
 };
 Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
 
-var filtered = Filters.filterCanvas(Filters.convolute, ice_canvas,
-		  [   .1,  .1,  .1,
-		      .1, .2, .1,
-		     .1, .1, .1 ]
-		);
 
-ice_canvas.width = filtered.width;
-ice_canvas.height = filtered.height;
-var ctx = ice_canvas.getContext('2d');
-ctx.putImageData(filtered, 0, 0);
+if (false) {
+	
+	var filtered = Filters.filterCanvas(Filters.convolute, ice_canvas,
+			  [   .1,  .1,  .1,
+			      .1, .2, .1,
+			     .1, .1, .1 ]
+			);
 
-//test.draw(0,0, width, height);
+	
+	ice_canvas.width = filtered.width;
+	ice_canvas.height = filtered.height;
+	var ctx = ice_canvas.getContext('2d');
+	ctx.putImageData(filtered, 0, 0);
+	
+	//test.draw(0,0, width, height);
 
-
-VoronoiDemo.init();
+	VoronoiDemo.init();
+}
 
 frameCount = 0;
 var t0 = -1;
@@ -306,7 +388,9 @@ var animFrame = function(t) {
 //	}
 //    BgC.putImageData(buffers[bgInd],0,0);
 	
-	VoronoiDemo.render();
+	//VoronoiDemo.render();
+	water_canvas(6.03+frameCount/10).draw(0,0, width, height)
+
 	
     RQ(animFrame);
     
@@ -319,4 +403,6 @@ var animFrame = function(t) {
 	}    
 };
 
-RQ(animFrame);
+water_canvas(0).draw(0,0, width, height)
+
+//RQ(animFrame);
