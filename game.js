@@ -102,28 +102,109 @@ var r2c=function (width, height, renderFunction) {
 
 
 
-var painty = function(buffer, base_min, base_top, dirx, diry, color_step, seed_chance) {
+Filters = {
+	getPixels: function(c) {
+	  var ctx = c.getContext('2d');
+	  return ctx.getImageData(0,0,c.width,c.height);
+	},
+		
+	filterCanvas: function(filter, c, var_args) {
+	  var args = [Filters.getPixels(c)];
+	  for (var i=2; i<arguments.length; i++) {
+	    args.push(arguments[i]);
+	  }
+	  return filter.apply(null, args);
+	},
+
+	createCanvas: function(w,h) {
+	  var c = DC.createElement('canvas');
+	  c.width = w;
+	  c.height = h;
+	  return c;
+	},
+	
+	tmpCanvas: DC.createElement('canvas'),
+	
+	createImageData: function(w,h) {
+	  return this.tmpCtx.createImageData(w,h);
+	},
+	
+	convolute: function(pixels, weights, wrap) {
+		  var side = round(sqrt(weights.length));
+		  var halfSide = (side/2)<<0;
+		  var src = pixels.data;
+		  var sw = pixels.width;
+		  var sh = pixels.height;
+		  // pad output by the convolution matrix
+		  var w = sw;
+		  var h = sh;
+		  var output = Filters.createImageData(w, h);
+		  var dst = output.data;
+		  // go through the destination image pixels
+		  //var alphaFac = opaque ? 1 : 0;
+		  var dstOff = 0;
+		  for (var y=0; y<h; y++) {
+		    for (var x=0; x<w; x++) {
+		      var sy = y;
+		      var sx = x;
+		      // calculate the weighed sum of the source image pixels that
+		      // fall under the convolution matrix
+		      var r=0, g=0, b=0;//, a=0;
+		      for (var cy=0; cy<side; cy++) {
+		        for (var cx=0; cx<side; cx++) {
+		          var scy = sy + cy - halfSide;
+		          var scx = sx + cx - halfSide;
+		          scy += height*10;
+		          scy %= height;
+		          scx += width*10;
+		          scx %= width;
+		          //if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
+		            var srcOff = (scy*sw+scx)*4;
+		            var wt = weights[cy*side+cx];
+		            r += src[srcOff] * wt;
+		            g += src[srcOff+1] * wt;
+		            b += src[srcOff+2] * wt;
+		            //a += src[srcOff+3] * wt;
+		          //}
+		        }
+		      }
+		      dst[dstOff++] = r;
+		      dst[dstOff++] = g;
+		      dst[dstOff++] = b;
+		      dst[dstOff++] = OA;//a + alphaFac*(255-a);
+		    }
+		  }
+		  return output;
+		}
+};
+Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
+
+
+
+var painty = function(buffer, base_min, base_top, mndirx,mxdirx, mndiry, mxdiry, color_step, seed_chance) {
 	var fu = function(x,y) {
 		var ei=y*width+x;
 		return buffer[ei] ?
 					buffer[ei] :
 					buffer[ei]= irnda(seed_chance) ? 
-								255 & max(0, (irnda(color_step)+fu((x-irndab(1,dirx)) %width, 
-										(y-irndab(1,diry))%height)))
+								255 & max(0, (irnda(color_step)+fu((x-irndab(mndirx,mxdirx)) %width, 
+										(y-irndab(mndiry,mxdiry))%height)))
 								: irndab(base_min,base_top);
 	}
 	return fu;
 }
 
-if (false) {
+enable_voronoi = false;
+
+if (enable_voronoi) {
 	
 	//
 	ice_canvas = r2c(width, height, function(ctx, canvas) {
 		var imgData=ctx.createImageData(width,height);
 	    var d = imgData.data;
-	    var red = painty([], 60,110, 3,3, -4, 100);
-	    var green = painty([], 80,160, 3,3, -2, 500);
-	    var blue = painty([], 20, 40, 3,3, 3, 1000);
+	    var red = painty([], 60,110, 1,3, 1,3, -4, 100);
+	    var green = painty([], 80,160, 1,3, 1,3, -2, 500);
+	    var blue = painty([], 20, 40, 1,3, 1,3, 3, 1000);
 	    var i=0; // pixel index
 	    for (var y=0;y<height;y++) {
 	    	for (var x=0; x<width; x++) {
@@ -141,9 +222,9 @@ if (false) {
 	grass_canvas = r2c(width, height, function(ctx, canvas) {
 		var imgData=ctx.createImageData(width,height);
 	    var d = imgData.data;
-	    var red = painty([], 60,150, -3,3, -2, 100);
-	    var green = painty([], 40,90, -3,3, 3, 200);
-	    var blue = painty([], 70, 120, -3,3, -3, 100);
+	    var red = painty([], 60,150, -3,-1, 1,3, -2, 100);
+	    var green = painty([], 40,90, -3,-1, 1,3, 3, 200);
+	    var blue = painty([], 70, 120, -3,-1, 1,3, -3, 100);
 	    var i=0; // pixel index
 	    for (var y=0;y<height;y++) {
 	    	for (var x=0; x<width; x++) {
@@ -191,7 +272,7 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 			var dx = displace_x[i];
 			var dy = displace_y[i];
 			i++;
-			var oi = 4*((x + dx+width)%width + ((y+dy+height)%height)*width);
+			var oi = 4*((x-dx+20*width)%width + ((y-dy+20*height)%height)*width);
 			new_data[di++] = pixel_data[oi++];
 			new_data[di++] = pixel_data[oi++];
 			new_data[di++] = pixel_data[oi++];
@@ -201,30 +282,49 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 	
 }
 
+var wp=[];
+var red = painty([], 60,110, -2,2, 1,4, -4, 100);
+var green = painty([], 80,160, -2,2, 1,4, -2, 500);
+var blue = painty([], 20, 40, -2,2, 1,4, 3, 1000);
+var i=0; // pixel index
+for (var y=0;y<height;y++) {
+	for (var x=0; x<width; x++) {
+		wp[i++] = irndab(30,50)+round(sin(x*TPI/60)*10 +((y/(20*(y+50)/height))&1)*25); //red(x,y)
+		wp[i++] = irndab(100,140)+round(sin(x*TPI/80)*10 +((y/(15*(y+50)/height))&1)*25);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
+		wp[i++] = irndab(160,170)+round(sin(x*TPI/90)*25 +((y/(30*(y+50)/height))&1)*25);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
+//		wp[i++] = red(x,y);
+//		wp[i++] = green(x,y);
+//		wp[i++] = blue(x,y);
+		wp[i++] = OA;
+	}
+}
+
+var res = Filters.convolute({data:wp, width:width, height:height},
+		  [   .1,  .1,  .1,
+		      .1, .2, .1,
+		     .1, .1, .1 ], true
+		);
+wp = res.data;
+
 water_canvas = function(P) {
 	return r2c(width, height, function(ctx, canvas) {
 		
-		var wp=[];
-		var red = painty([], 60,110, 3,3, -4, 100);
-	    var green = painty([], 80,160, 3,3, -2, 500);
-	    var blue = painty([], 20, 40, 3,3, 3, 1000);
-	    var i=0; // pixel index
-	    for (var y=0;y<height;y++) {
-	    	for (var x=0; x<width; x++) {
-	    		wp[i++] = ((x/10)&7)*10 + ((y/10)&7)*10; //red(x,y)
-	    		wp[i++] = ((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
-	    		wp[i++] = ((x/30)&7)*10 + ((y/30)&7)*10;//blue(x,y);    		
-	    		wp[i++] = OA;
-	    	}
-	    }
+	
 	    
 	    var displace_x = [];
 	    var displace_y = [];
 	    i=0; // pixel index
 	    for (var y=0;y<height;y++) {
 	    	for (var x=0; x<width; x++) {
-	    		displace_x[i] = round((5+3*y/height)*sin(TPI*10*(x+y)/width));
-	    		displace_y[i] = round(5*sin(PI+TPI*10*x/width));
+	    		displace_x[i] = round(5*(x-width/2)/(3*y/height+0.6) + 
+	    								8*sin(P+TPI*3*(x+2*y)/width)
+	    								+4*sin(P+TPI*7*(x+y)/width)
+	    							);
+	    		displace_y[i] = round( 6*(2*(y)/height+0.6) * 
+	    					sin(P+TPI*5*(x+y/2)/width)*
+	    					sin(P+TPI*3*(x+y)/width));
+//	    		displace_x[i] = 0;
+//	    		displace_y[i] = 0;
 	    		i++;
 	    	}
 	    }
@@ -232,7 +332,8 @@ water_canvas = function(P) {
 		var imgData=ctx.createImageData(width,height);
 	    var d = imgData.data;
 	    
-	    displace(displace_x, displace_y, wp, d, width, height)
+	    displace(displace_x, displace_y, wp, d, width, height);
+	    
 //	    var i=0; // pixel index
 //		for (var y=0;y<height;y++) {
 //			var s=3/(y+250);
@@ -278,81 +379,7 @@ canvases[2].addEventListener('mousemove', function(evt) {
 
 
 
-Filters = {
-	getPixels: function(c) {
-	  var ctx = c.getContext('2d');
-	  return ctx.getImageData(0,0,c.width,c.height);
-	},
-		
-	filterCanvas: function(filter, c, var_args) {
-	  var args = [Filters.getPixels(c)];
-	  for (var i=2; i<arguments.length; i++) {
-	    args.push(arguments[i]);
-	  }
-	  return filter.apply(null, args);
-	},
-
-	createCanvas: function(w,h) {
-	  var c = DC.createElement('canvas');
-	  c.width = w;
-	  c.height = h;
-	  return c;
-	},
-	
-	tmpCanvas: DC.createElement('canvas'),
-	
-	createImageData: function(w,h) {
-	  return this.tmpCtx.createImageData(w,h);
-	},
-	
-	convolute: function(pixels, weights, opaque) {
-		  var side = Math.round(Math.sqrt(weights.length));
-		  var halfSide = Math.floor(side/2);
-		  var src = pixels.data;
-		  var sw = pixels.width;
-		  var sh = pixels.height;
-		  // pad output by the convolution matrix
-		  var w = sw;
-		  var h = sh;
-		  var output = Filters.createImageData(w, h);
-		  var dst = output.data;
-		  // go through the destination image pixels
-		  var alphaFac = opaque ? 1 : 0;
-		  for (var y=0; y<h; y++) {
-		    for (var x=0; x<w; x++) {
-		      var sy = y;
-		      var sx = x;
-		      var dstOff = (y*w+x)*4;
-		      // calculate the weighed sum of the source image pixels that
-		      // fall under the convolution matrix
-		      var r=0, g=0, b=0, a=0;
-		      for (var cy=0; cy<side; cy++) {
-		        for (var cx=0; cx<side; cx++) {
-		          var scy = sy + cy - halfSide;
-		          var scx = sx + cx - halfSide;
-		          if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
-		            var srcOff = (scy*sw+scx)*4;
-		            var wt = weights[cy*side+cx];
-		            r += src[srcOff] * wt;
-		            g += src[srcOff+1] * wt;
-		            b += src[srcOff+2] * wt;
-		            a += src[srcOff+3] * wt;
-		          }
-		        }
-		      }
-		      dst[dstOff] = r;
-		      dst[dstOff+1] = g;
-		      dst[dstOff+2] = b;
-		      dst[dstOff+3] = a + alphaFac*(255-a);
-		    }
-		  }
-		  return output;
-		}
-};
-Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
-
-
-if (false) {
+if (enable_voronoi) {
 	
 	var filtered = Filters.filterCanvas(Filters.convolute, ice_canvas,
 			  [   .1,  .1,  .1,
@@ -371,6 +398,7 @@ if (false) {
 	VoronoiDemo.init();
 }
 
+water_frames = [];
 frameCount = 0;
 var t0 = -1;
 var animFrame = function(t) {
@@ -387,9 +415,16 @@ var animFrame = function(t) {
 //		}
 //	}
 //    BgC.putImageData(buffers[bgInd],0,0);
-	
-	//VoronoiDemo.render();
-	water_canvas(6.03+frameCount/10).draw(0,0, width, height)
+	if (enable_voronoi) {
+		VoronoiDemo.render();
+	}
+	else {
+		var frameInd = ((frameCount/6)<<0) % 10;
+		if (!water_frames[frameInd]) {
+			water_frames[frameInd] = water_canvas(frameInd * TPI/10);
+		}
+		water_frames[frameInd].draw(0,0, width, height);
+	}
 
 	
     RQ(animFrame);
@@ -403,6 +438,8 @@ var animFrame = function(t) {
 	}    
 };
 
-water_canvas(0).draw(0,0, width, height)
-
-//RQ(animFrame);
+RQ(animFrame);
+//if (enable_voronoi)
+//	RQ(animFrame);
+//else
+//water_canvas(0).draw(0,0, width, height)
