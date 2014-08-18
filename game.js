@@ -184,19 +184,129 @@ Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
 var painty = function(buffer, base_min, base_top, mndirx,mxdirx, mndiry, mxdiry, color_step, seed_chance) {
 	var fu = function(x,y) {
 		var ei=y*width+x;
-		return buffer[ei] ?
-					buffer[ei] :
-					buffer[ei]= irnda(seed_chance) ? 
-								255 & max(0, (irnda(color_step)+fu((x-irndab(mndirx,mxdirx)) %width, 
-										(y-irndab(mndiry,mxdiry))%height)))
-								: irndab(base_min,base_top);
+		try {
+			return buffer[ei] ?
+						buffer[ei] :
+						buffer[ei]= irnda(seed_chance) ? 
+									255 & max(0, (irnda(color_step)+fu((x-irndab(mndirx,mxdirx)) %width, 
+											(y-irndab(mndiry,mxdiry))%height)))
+									: irndab(base_min,base_top);
+		}
+		catch(e) {
+			return buffer[ei]= irndab(base_min,base_top);
+		}
 	}
 	return fu;
 }
 
-enable_voronoi = false;
+
+// build level map
+var LevelW = 400;
+var LevelH = 100;
+function initLevel() {
+	level = r2c(LevelW, LevelH, function(ctx, canvas) {
+		ctx.fillStyle = "#fff";
+		ctx.lineWidth = 6;
+		ctx.fillRect(0,0,LevelW,LevelH);
+		ctx.strokeStyle = "#ddd";
+		ctx.textAlign = 'center';
+		ctx.font = "bold 30px Arial";
+		ctx.fillStyle = "#aaa";
+
+		// text air wrapper
+		var T = "JS13KGAMES 2014";
+		ctx.strokeText(T,200,50);
+		
+		// mountain
+		ctx.beginPath();
+		var prev = LevelH;
+		ctx.lineTo(0,prev);
+		for (var x=0; x<LevelW; x+= 5) {
+			ctx.lineTo(x, irndab(2,10)+(1-sq(sin(PI*x/LevelW))+.1*sq(sin(6*TPI*x/LevelW)))*LevelH);
+		}
+		ctx.lineTo(LevelW,LevelH);
+		ctx.closePath();
+		ctx.stroke();
+		ctx.fill();
+		
+		// text full inner
+		ctx.fillStyle = "#000";
+		ctx.fillText(T,200,50);
+		ctx.fillStyle = "#fff";
+		
+
+		ctx.fillStyle = "#ddd";
+		T = "ISLAND WAR";
+		ctx.fillText(T,200,86);
+		
+		var pixels = ctx.getImageData(0,0,LevelW, LevelH).data;
+		var i=0;
+		for (var y=0; y<LevelH; y++) {
+			var _y = round(height*y/LevelH);
+			for (var x=0; x<LevelW; x++) {
+				var site = {x: round(width*x/LevelW) + irndab(-2,3), y: _y+irndab(-2,3)  }
+					if (pixels[i] > 210 && pixels[i] < 235) {
+					// air
+					site.c = 0;
+				}
+				else  if (pixels[i] > 150 && pixels[i] < 180) {
+					// dirt
+					site.c = 1;
+				}
+				else if (pixels[i] < 30) {
+					site.c = 2;
+				}
+				else {
+					i+=4;
+					continue;
+				}
+				VoronoiDemo.sites.push(site);
+				i += 4;
+			}
+		}
+		VoronoiDemo.diagram = VoronoiDemo.voronoi.compute(VoronoiDemo.sites, VoronoiDemo.bbox);
+		VoronoiDemo.render();
+	});
+	//level.draw(0,0,LevelW, LevelH);
+}
+enable_voronoi = true;
+
+
 
 if (enable_voronoi) {
+
+
+	var sky = function(buffer, mnp, mxp) {
+		var fu = function(x,y) {
+			var p = irndab(mnp, mxp);
+			buffer[x] = (x& buffer[x]) ? (buffer[x]+buffer[x-1])/2 : (x?buffer[x-1]: 127);
+			buffer[x] *= 2;
+			if (p>0) {
+				buffer[x] += p;
+			}
+			return buffer[x]? buffer[x]<255? buffer[x]:255:0;
+		};
+		return fu;
+	}
+
+	
+	sky_canvas = r2c(width, height, function(ctx, canvas) {
+		var imgData=ctx.createImageData(width,height);
+	    var d = imgData.data;
+	    var red = sky([], -4,5);
+	    var green = sky([], -3,4);
+	    var blue = sky([], -7,8);
+	    var i=0; // pixel index
+	    for (var y=0;y<height;y++) {
+	    	for (var x=0; x<width; x++) {
+	    		d[i++] = red(x,y);
+	    		d[i++] = green(x,y);
+	    		d[i++] = blue(x,y);    		
+	    		d[i++] = OA;
+	    	}
+	    }
+	    ctx.putImageData(imgData,0,0);
+	})
 	
 	//
 	ice_canvas = r2c(width, height, function(ctx, canvas) {
@@ -282,29 +392,30 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 	
 }
 
-var wp=[];
+var waterPixels=[];
 var red = painty([], 60,110, -2,2, 1,4, -4, 100);
 var green = painty([], 80,160, -2,2, 1,4, -2, 500);
 var blue = painty([], 20, 40, -2,2, 1,4, 3, 1000);
 var i=0; // pixel index
 for (var y=0;y<height;y++) {
 	for (var x=0; x<width; x++) {
-		wp[i++] = irndab(30,50)+round(sin(x*TPI/60)*10 +((y/(20*(y+50)/height))&1)*25); //red(x,y)
-		wp[i++] = irndab(100,140)+round(sin(x*TPI/80)*10 +((y/(15*(y+50)/height))&1)*25);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
-		wp[i++] = irndab(160,170)+round(sin(x*TPI/90)*25 +((y/(30*(y+50)/height))&1)*25);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
-//		wp[i++] = red(x,y);
-//		wp[i++] = green(x,y);
-//		wp[i++] = blue(x,y);
-		wp[i++] = OA;
+		waterPixels[i++] = irndab(30,50)+round(sin(x*TPI/60)*10 +((y/(20*(y+50)/height))&1)*25); //red(x,y)
+		waterPixels[i++] = irndab(100,140)+round(sin(x*TPI/80)*10 +((y/(15*(y+50)/height))&1)*25);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
+		waterPixels[i++] = irndab(160,170)+round(sin(x*TPI/90)*25 +((y/(30*(y+50)/height))&1)*25);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
+//		waterPixels[i++] = red(x,y);
+//		waterPixels[i++] = green(x,y);
+//		waterPixels[i++] = blue(x,y);
+		waterPixels[i++] = OA;
 	}
 }
 
-var res = Filters.convolute({data:wp, width:width, height:height},
+// blur the water
+var res = Filters.convolute({data:waterPixels, width:width, height:height},
 		  [   .1,  .1,  .1,
 		      .1, .2, .1,
 		     .1, .1, .1 ], true
 		);
-wp = res.data;
+waterPixels = res.data;
 
 water_canvas = function(P) {
 	return r2c(width, height, function(ctx, canvas) {
@@ -332,7 +443,7 @@ water_canvas = function(P) {
 		var imgData=ctx.createImageData(width,height);
 	    var d = imgData.data;
 	    
-	    displace(displace_x, displace_y, wp, d, width, height);
+	    displace(displace_x, displace_y, waterPixels, d, width, height);
 	    
 //	    var i=0; // pixel index
 //		for (var y=0;y<height;y++) {
@@ -345,9 +456,9 @@ water_canvas = function(P) {
 //		    	var _y = (height*(y-yy)/s)<<0;
 //		    	
 //		    	
-//		    	d[i++] = wp[_x+_y*width]//( (((x+width)*s+yy)&1)+(((2*width-x)*s+yy)&1))*127;
-//		    	d[i++] = wp[_x+_y*width+1]//( ((5*((x+width)*s+yy))&1) + ((5*((width*2-x)*s+yy))&1))*127;
-//		  		d[i++] = wp[_x+_y*width+2]//(((29*((x+width)*s+yy))&1)+((29*((width*2-x)*s+yy))&1))*127;
+//		    	d[i++] = waterPixels[_x+_y*width]//( (((x+width)*s+yy)&1)+(((2*width-x)*s+yy)&1))*127;
+//		    	d[i++] = waterPixels[_x+_y*width+1]//( ((5*((x+width)*s+yy))&1) + ((5*((width*2-x)*s+yy))&1))*127;
+//		  		d[i++] = waterPixels[_x+_y*width+2]//(((29*((x+width)*s+yy))&1)+((29*((width*2-x)*s+yy))&1))*127;
 //		    	// flat
 //	//	    	d[i++] = ( (((x+width)*s)&1)+(((2*width-x)*s)&1))*127;
 //	//	    	d[i++] = ( ((5*((x+width)*s))&1) + ((5*((width*2-x)*s))&1))*127;
@@ -387,7 +498,7 @@ if (enable_voronoi) {
 			     .1, .1, .1 ]
 			);
 
-	
+	// blur the ice canvas
 	ice_canvas.width = filtered.width;
 	ice_canvas.height = filtered.height;
 	var ctx = ice_canvas.getContext('2d');
@@ -395,7 +506,9 @@ if (enable_voronoi) {
 	
 	//test.draw(0,0, width, height);
 
-	VoronoiDemo.init();
+	VoronoiDemo.init(false);
+	
+	initLevel();
 }
 
 water_frames = [];
@@ -438,7 +551,7 @@ var animFrame = function(t) {
 	}    
 };
 
-RQ(animFrame);
+//RQ(animFrame);
 //if (enable_voronoi)
 //	RQ(animFrame);
 //else
