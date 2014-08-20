@@ -383,17 +383,77 @@ wavy = function(x,y,p, yp1, yp2){
 
 // based on water tutorial 
 // http://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
-spring_k = 0.025; // adjust this value to your liking
-spring_d = 0.025;
-function updateSpring(spring) {
-	var target_height = height - water_y;
+
+function updateSpring(spring, tension, damping, target_height) {
 	var x = spring.height - target_height;
-	var acceleration = -k * x -spring_d*spring.velocity;
+	var acceleration = -tension * x -damping*spring.velocity;
 	
 	spring.velocity += acceleration;
-	spring.pos += spring.velocity;
+	spring.height += spring.velocity;
 }
 
+water_y = height-10;
+
+var springs = [];
+range(width/10+1, function() {
+	springs.push({
+		height: water_y,
+		velocity: 0,
+	})
+})
+
+function updateWater() {
+	var Spread = 0.25;
+	
+	each(springs, function($) {
+		updateSpring($, 0.020, 0.025, water_y);
+	})
+	 
+	var leftDeltas = [];
+	var rightDeltas = [];
+	             
+	// do some passes where springs pull on their neighbours
+	for (var j = 0; j < 8; j++)
+	{
+	    for (var i = 0; i < springs.length; i++)
+	    {
+	        if (i > 0) {
+	            leftDeltas[i] = Spread * (springs[i].height - springs [i - 1].height);
+	            springs[i - 1].velocity += leftDeltas[i];
+	        }
+	        if (i < springs.length - 1)
+	        {
+	            rightDeltas[i] = Spread * (springs[i].height - springs [i + 1].height);
+	            springs[i + 1].velocity += rightDeltas[i];
+	        }
+	    }
+	 
+	    for (var i = 0; i < springs.length; i++)
+	    {
+	        if (i > 0)
+	            springs[i - 1].height += leftDeltas[i];
+	        if (i < springs.length - 1)
+	            springs[i + 1].height += rightDeltas[i];
+	    }
+	}
+}
+
+function renderWater() {
+
+	C.clearRect(0,0,width,height);
+	C.beginPath();
+	C.moveTo(width, height);
+	C.lineTo(0, height);
+	var x=0;
+	each(springs, function($) {
+		C.lineTo(x, $.height + 4*sin(TPI*((frameCount+x)/100)))
+		x+= 10;
+	})
+	C.closePath();
+	C.fill();
+}
+
+// displace bitmap pixels
 function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 	var di = 0; // destination index
 	var i=0;
@@ -544,7 +604,6 @@ water_frames = [];
 frameCount = 0;
 var prevCount = frameCount;
 var t0 = -1;
-var water_y = height-10;
 BgC.fillStyle = sky_pattern;
 BgC.fillRect(0,0,width,height);
 var prevFrameInd;
@@ -560,15 +619,10 @@ var animFrame = function(t) {
 		prevFrameInd = frameInd;
 	}
 	
-	C.clearRect(0,0,width,height);
-	C.beginPath();
-	C.moveTo(width, height);
-	C.lineTo(0, height);
-	for (var x=0; x<=width; x+= 10) {
-		C.lineTo(x, water_y + 4*sin(TPI*((frameCount+x)/100)))
-	}
-	C.closePath();
-	C.fill();
+	updateWater();
+	renderWater();
+	
+	
 	//water_frames[frameInd].draw(0,water_y, width, height);
 	water_y -= 0.01;
 	if (water_y<200) {
