@@ -56,12 +56,13 @@ TPI = 2*PI;
 
 
 
-
+// random in range [0,a)
 rnda = function(a) { return rnd()*a}
+// random integer in range [0,a-1]
 irnda = function(a) { return rnda(a) << 0}
-// random in range
+// random in range [a,b)
 rndab = function(a,b) { return a+rnda(b-a)}
-// random in range - integer
+// random integer in range [a,b-1] 
 irndab = function(a,b) { return rndab(a,b)<<0 }
 
 
@@ -101,7 +102,7 @@ var r2c=function (width, height, renderFunction) {
 
 
 
-
+// taken from http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
 Filters = {
 	getPixels: function(c) {
 	  var ctx = c.getContext('2d');
@@ -180,6 +181,11 @@ Filters = {
 Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
 
 
+// pattern of stones
+var stone_canvas = r2c(256, 256, function(context, canvas) {
+	
+})
+
 
 var painty = function(buffer, base_min, base_top, mndirx,mxdirx, mndiry, mxdiry, color_step, seed_chance) {
 	var fu = function(x,y) {
@@ -244,7 +250,9 @@ function initLevel() {
 		for (var y=0; y<LevelH; y++) {
 			var _y = round(height*y/LevelH);
 			for (var x=0; x<LevelW; x++) {
-				var site = {x: round(width*x/LevelW) + irndab(-2,3), y: _y+irndab(-2,3)  }
+				var site = {x: round(width*x/LevelW) + irndab(-1,2), 
+							y: _y+irndab(-1,2) 
+							}
 					if (pixels[i] > 210 && pixels[i] < 235) {
 					// air
 					site.c = 0;
@@ -273,40 +281,39 @@ enable_voronoi = true;
 
 
 
+var sky_width = 250;
+
+sky_canvas = r2c(sky_width, height, function(ctx, canvas) {
+	var imgData=ctx.createImageData(sky_width,height);
+    var d = imgData.data;
+    
+    var i=0; // pixel index
+    for (var x=0; x<sky_width; x++) {
+    	d[i++] = 40; // red
+		d[i++] = 50; // green
+		d[i++] = 80; // blue;    		
+		d[i++] = OA;
+    }
+    var row_offset = sky_width*4; // 4 bytes per pixel
+    for (var y=1;y<height;y++) {
+    	for (var x=0; x<sky_width; x++) {
+    		d[i] = (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-4,3));
+    		i++;
+    		d[i] = (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-4,3));
+    		i++;
+    		d[i] = (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-4,3));
+    		i++;
+    		d[i++] = OA;
+    	}
+    }
+    ctx.putImageData(imgData,0,0);
+})
+
+var sky_pattern = C.createPattern(sky_canvas, 'repeat-x');
+
 if (enable_voronoi) {
 
 
-	var sky = function(buffer, mnp, mxp) {
-		var fu = function(x,y) {
-			var p = irndab(mnp, mxp);
-			buffer[x] = (x& buffer[x]) ? (buffer[x]+buffer[x-1])/2 : (x?buffer[x-1]: 127);
-			buffer[x] *= 2;
-			if (p>0) {
-				buffer[x] += p;
-			}
-			return buffer[x]? buffer[x]<255? buffer[x]:255:0;
-		};
-		return fu;
-	}
-
-	
-	sky_canvas = r2c(width, height, function(ctx, canvas) {
-		var imgData=ctx.createImageData(width,height);
-	    var d = imgData.data;
-	    var red = sky([], -4,5);
-	    var green = sky([], -3,4);
-	    var blue = sky([], -7,8);
-	    var i=0; // pixel index
-	    for (var y=0;y<height;y++) {
-	    	for (var x=0; x<width; x++) {
-	    		d[i++] = red(x,y);
-	    		d[i++] = green(x,y);
-	    		d[i++] = blue(x,y);    		
-	    		d[i++] = OA;
-	    	}
-	    }
-	    ctx.putImageData(imgData,0,0);
-	})
 	
 	//
 	ice_canvas = r2c(width, height, function(ctx, canvas) {
@@ -318,7 +325,7 @@ if (enable_voronoi) {
 	    var i=0; // pixel index
 	    for (var y=0;y<height;y++) {
 	    	for (var x=0; x<width; x++) {
-	    		d[i++] = red(x,y)
+	    		d[i++] = red(x,y);
 	    		d[i++] = green(x,y);
 	    		d[i++] = blue(x,y);    		
 	    		d[i++] = OA;
@@ -374,22 +381,37 @@ wavy = function(x,y,p, yp1, yp2){
 //    ctx.putImageData(imgData,0,0);
 //})
 
+// based on water tutorial 
+// http://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
+spring_k = 0.025; // adjust this value to your liking
+spring_d = 0.025;
+function updateSpring(spring) {
+	var target_height = height - water_y;
+	var x = spring.height - target_height;
+	var acceleration = -k * x -spring_d*spring.velocity;
+	
+	spring.velocity += acceleration;
+	spring.pos += spring.velocity;
+}
+
 function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 	var di = 0; // destination index
 	var i=0;
+	var w20 = 20*width;
+	var h20 = 20*height;
 	for (var y=0; y<height; y++) {
 		for (var x=0; x<width; x++)  {
 			var dx = displace_x[i];
 			var dy = displace_y[i];
 			i++;
-			var oi = 4*((x-dx+20*width)%width + ((y-dy+20*height)%height)*width);
+			// adding 20*width to avoid negative array index even for large dx (the modulo width makes it correct)
+			var oi = 4*((x-dx+w20)%width + ((y-dy+h20)%height)*width);
 			new_data[di++] = pixel_data[oi++];
 			new_data[di++] = pixel_data[oi++];
 			new_data[di++] = pixel_data[oi++];
 			new_data[di++] = pixel_data[oi];
 		}
 	}
-	
 }
 
 var waterPixels=[];
@@ -398,28 +420,35 @@ var green = painty([], 80,160, -2,2, 1,4, -2, 500);
 var blue = painty([], 20, 40, -2,2, 1,4, 3, 1000);
 var i=0; // pixel index
 for (var y=0;y<height;y++) {
+	var prevR = irndab(5,25);
+	var prevG = irndab(10,35);
+	var prevB = irndab(20,40);
 	for (var x=0; x<width; x++) {
-		waterPixels[i++] = irndab(30,50)+round(sin(x*TPI/60)*10 +((y/(20*(y+50)/height))&1)*25); //red(x,y)
-		waterPixels[i++] = irndab(100,140)+round(sin(x*TPI/80)*10 +((y/(15*(y+50)/height))&1)*25);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
-		waterPixels[i++] = irndab(160,170)+round(sin(x*TPI/90)*25 +((y/(30*(y+50)/height))&1)*25);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
-//		waterPixels[i++] = red(x,y);
-//		waterPixels[i++] = green(x,y);
-//		waterPixels[i++] = blue(x,y);
+		var curR = irndab(25,50);
+		var curG = irndab(30,65);
+		var curB = irndab(70,120);
+
+		waterPixels[i++] = 20+(curR+prevR >>1) + round(sin(y*TPI/10)*5); //red(x,y)
+		waterPixels[i++] = 25+(curG+prevG >>1) +round(sin(y*TPI/12)*5);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
+		waterPixels[i++] = 30+(curB+prevB >>1) +round(sin(y*TPI/13)*8);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
 		waterPixels[i++] = OA;
+		
+		prevR = curR;
+		prevG = curG;
+		prevB = curB;
 	}
 }
 
 // blur the water
 var res = Filters.convolute({data:waterPixels, width:width, height:height},
-		  [   .1,  .1,  .1,
+		  [   .1, .1, .1,
 		      .1, .2, .1,
-		     .1, .1, .1 ], true
+ 		      .1, .1, .1 ], true
 		);
 waterPixels = res.data;
 
 water_canvas = function(P) {
 	return r2c(width, height, function(ctx, canvas) {
-		
 	
 	    
 	    var displace_x = [];
@@ -428,12 +457,12 @@ water_canvas = function(P) {
 	    for (var y=0;y<height;y++) {
 	    	for (var x=0; x<width; x++) {
 	    		displace_x[i] = round(5*(x-width/2)/(3*y/height+0.6) + 
-	    								8*sin(P+TPI*3*(x+2*y)/width)
-	    								+4*sin(P+TPI*7*(x+y)/width)
+	    								5*sin(P+TPI*(x+2*y)/width)
+	    								+3*sin(P+TPI*2*(x+y)/width)
 	    							);
-	    		displace_y[i] = round( 6*(2*(y)/height+0.6) * 
-	    					sin(P+TPI*5*(x+y/2)/width)*
-	    					sin(P+TPI*3*(x+y)/width));
+	    		displace_y[i] = round( 5*(2*(y)/height+0.6) * 
+	    					sin(P+TPI*4*(x+y/2)/width)*
+	    					sin(P+TPI*3.5*(x+y)/width));
 //	    		displace_x[i] = 0;
 //	    		displace_y[i] = 0;
 	    		i++;
@@ -471,15 +500,15 @@ water_canvas = function(P) {
 		})
 }
 
-
-MOUSE_POS = {x:0, y:0}
-rect = canvases[2].getBoundingClientRect();
-canvases[2].addEventListener('mousemove', function(evt) {
-	MOUSE_POS = {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
-    };
-}, false);
+//
+//MOUSE_POS = {x:0, y:0}
+//rect = canvases[2].getBoundingClientRect();
+//canvases[2].addEventListener('mousemove', function(evt) {
+//	MOUSE_POS = {
+//      x: evt.clientX - rect.left,
+//      y: evt.clientY - rect.top
+//    };
+//}, false);
 
 
 // two background buffers - for animation
@@ -506,37 +535,44 @@ if (enable_voronoi) {
 	
 	//test.draw(0,0, width, height);
 
-	VoronoiDemo.init(false);
+	VoronoiDemo.init();
 	
 	initLevel();
-}
+}	
 
 water_frames = [];
 frameCount = 0;
+var prevCount = frameCount;
 var t0 = -1;
+var water_y = height-10;
+BgC.fillStyle = sky_pattern;
+BgC.fillRect(0,0,width,height);
+var prevFrameInd;
+
 var animFrame = function(t) {
-//	var bgInd = frameCount++ % buffers.length;
-//	if (frameCount <= buffers.length) {
-//		var d = buffers[bgInd].data;
-//		var i =0;
-//		for (var y=0;y<height;y++) {
-//	    	for (var x=0; x<width; x++) {
-//	    		d[i++] = d[i++] = d[i++] = irnda(256);
-//	    		
-//	    		d[i++] = OA;
-//	    	}
-//		}
-//	}
-//    BgC.putImageData(buffers[bgInd],0,0);
-	if (enable_voronoi) {
-		VoronoiDemo.render();
+	var frameInd = ((frameCount/6)<<0) % 20;
+	if (!water_frames[frameInd]) {
+		water_frames[frameInd] = C.createPattern(water_canvas(frameInd * TPI/20), 'no-repeat');
 	}
-	else {
-		var frameInd = ((frameCount/6)<<0) % 10;
-		if (!water_frames[frameInd]) {
-			water_frames[frameInd] = water_canvas(frameInd * TPI/10);
-		}
-		water_frames[frameInd].draw(0,0, width, height);
+
+	if (prevFrameInd != frameInd) {
+		C.fillStyle = water_frames[frameInd];
+		prevFrameInd = frameInd;
+	}
+	
+	C.clearRect(0,0,width,height);
+	C.beginPath();
+	C.moveTo(width, height);
+	C.lineTo(0, height);
+	for (var x=0; x<=width; x+= 10) {
+		C.lineTo(x, water_y + 4*sin(TPI*((frameCount+x)/100)))
+	}
+	C.closePath();
+	C.fill();
+	//water_frames[frameInd].draw(0,water_y, width, height);
+	water_y -= 0.01;
+	if (water_y<200) {
+		water_y = height-10;
 	}
 
 	
@@ -546,12 +582,12 @@ var animFrame = function(t) {
     frameCount++;
 	if (t - t0 > 10000) {
 		t0 = t;
-		console.log(frameCount, Date());
-		frameCount = 0;
+		console.log(frameCount-prevCount, Date());
+		prevCount = frameCount;
 	}    
 };
 
-//RQ(animFrame);
+RQ(animFrame);
 //if (enable_voronoi)
 //	RQ(animFrame);
 //else
