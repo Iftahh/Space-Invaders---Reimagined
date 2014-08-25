@@ -13,17 +13,14 @@ body {
 #canvas_cont canvas {
 	position: absolute;
 	-webkit-user-select: none;
+	width:1024px;
+	height:768px;
 }
+#man {display:none}
 
 </style>
 </head>
-<body>
-<p>Click to add Blue, Ctrl+Click to add Green</p>
-<div id="canvas_cont">
-	<canvas id='b' width=800 height=600 ></canvas>
-	<canvas id='voronoiCanvas' width=800 height=600 ></canvas>
-	<canvas id='c' width=800 height=600 ></canvas>
-</div>
+<body id="canvas_cont">
 
 	<script type="text/javascript" src="rhill-voronoi-core.js"></script>
 	<script type="text/javascript" src="voronoi.js"></script>

@@ -4,7 +4,7 @@ var VoronoiDemo = {
 	sites: [],
 	diagram: null,
 	canvas: null,
-	bbox: {xl:0,xr:800,yt:0,yb:600},
+	bbox: {xl:0,xr:1024,yt:0,yb:768},
 
 	normalizeEventCoords: function(target,e) {
 		// http://www.quirksmode.org/js/events_properties.html#position
@@ -24,7 +24,7 @@ var VoronoiDemo = {
 		return {x:x-target.offsetLeft,y:y-target.offsetTop};
 		},
 
-	init: function(enableMouse, initRandom) {
+	init: function(canvas, enableMouse, initRandom) {
 		var me = this;
 //		for (var x=10; x<800; x+= 30) {
 //			for (var y=10; y<600; y+=30) {
@@ -34,7 +34,7 @@ var VoronoiDemo = {
 		//this.diagram = this.voronoi.compute(this.sites, this.bbox);
 		me.ice_pattern = C.createPattern(sky_canvas, 'repeat');
 		me.grass_pattern = C.createPattern(grass_canvas,'repeat');
-		this.canvas = document.getElementById('voronoiCanvas');
+		this.canvas = canvas;
 		if (enableMouse) {
 			this.canvas.onmousemove = function(e) {
 				if (!me.sites.length) {return;}
@@ -128,7 +128,7 @@ var VoronoiDemo = {
 					dist /= 2;
 					sites.push({
 						x: site.x+(site.x-cell.site.x)/dist,
-						y: site.y+(site.y-cell.site.y)/dist,
+						y: site.y+(site.y-cell.site.y)/dist
 						});
 					}
 				sites.push(site);
@@ -204,6 +204,7 @@ var VoronoiDemo = {
 		var ctx = this.canvas.getContext('2d');
 		// background
 		ctx.globalAlpha = 1;
+		ctx.clearRect(0,0,width, height)
 //		ctx.beginPath();
 //		ctx.rect(0,0,this.canvas.width,this.canvas.height);
 //		ctx.fillStyle = "#fff";
