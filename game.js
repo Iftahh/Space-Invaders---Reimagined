@@ -28,6 +28,8 @@ each = function(collection, iterFu) {
     }
 }
 
+minmax = function(mn, mx, v) { return min(mx, max(mn, v))}
+
 duRange = function(w,h, fu) {
 	for (var y=0; y<h; y++)
 		for (var x=0; x<w; x++)
@@ -86,11 +88,11 @@ TPI = 2*PI;
 // random in range [0,a)
 rnda = function(a) { return rnd()*a}
 // random integer in range [0,a-1]
-irnda = function(a) { return rnda(a) << 0}
+irnda = function(a) { return ~~rnda(a)}
 // random in range [a,b)
 rndab = function(a,b) { return a+rnda(b-a)}
 // random integer in range [a,b-1] 
-irndab = function(a,b) { return rndab(a,b)<<0 }
+irndab = function(a,b) { return ~~rndab(a,b) }
 
 
 // polyfill RequestAnimFrame
@@ -168,7 +170,7 @@ Filters = {
 	
 	convolute: function(pixels, weights, wrap) {
 		  var side = round(sqrt(weights.length));
-		  var halfSide = (side/2)<<0;
+		  var halfSide = ~~(side/2);
 		  var src = pixels.data;
 		  var sw = pixels.width;
 		  var sh = pixels.height;
@@ -341,11 +343,11 @@ man_canvas = r2c(96,48, function(ctx) {
 	manImage.src = './man.gif';
 })
 
-draw_man = function(color, x,y,angle) {
+draw_man = function(color, v, angle) {
 	var man = color ? red_man: yellow_man;
 	C.save();
-	C.translate(x-24,y-48);
-	if (Player.flipped = angle > PI/2 || angle < -PI/2) {
+	C.translate(v.x-24,v.y-48);
+	if (Player.leftFace) {
 		C.translate(48,0);
 		C.scale(-1,1);
 		angle = PI - angle;
@@ -355,8 +357,8 @@ draw_man = function(color, x,y,angle) {
 	C.rotate(angle);
 	C.drawImage(man, 48,0, 48,48, -16, -16, 48,48);
 	C.restore();
-	C.fillStyle= "#f00";
-	C.fillRect(x-1, y-1, 3,3)
+//	C.fillStyle= "#f00";
+//	C.fillRect(v.x-1, v.y-1, 3,3)
 }
 
 var sky_width = 250;
@@ -433,7 +435,7 @@ if (false) {
 //blp = [180, 100, 503, 103];
 //
 //wavy = function(x,y,p, yp1, yp2){
-//    return 63*(((sqrt(sq(p[0]-x)+yp1)+1)/((abs(sin((sqrt(sq(p[2]-x)+yp2))/115)))+1)/200)>>0);
+//    return 63*(~~((sqrt(sq(p[0]-x)+yp1)+1)/((abs(sin((sqrt(sq(p[2]-x)+yp2))/115)))+1)/200));
 //}
 
 //
@@ -660,8 +662,8 @@ water_canvas = function(P) {
 //		    for (var x=0; x<WIDTH; x++) {
 //		    	var yy=(y+sin((x*x + yy0)/100/HEIGHT+P)*15)*s;
 //		    	
-//		    	var _x = (WIDTH*(x-yy)/s)<<0;
-//		    	var _y = (HEIGHT*(y-yy)/s)<<0;
+//		    	var _x = ~~(WIDTH*(x-yy)/s);
+//		    	var _y = ~~(HEIGHT*(y-yy)/s);
 //		    	
 //		    	
 //		    	d[i++] = waterPixels[_x+_y*WIDTH]//( (((x+WIDTH)*s+yy)&1)+(((2*WIDTH-x)*s+yy)&1))*127;
@@ -694,29 +696,27 @@ range(WATER_FRAMES, function(i) {
 })
 
 Player = {
-	x: WIDTH/2,
-	y: HEIGHT/2,
-	vx: 0,
-	vy: 0
+	pos: vector_create(WIDTH/2, HEIGHT/2),
+	v: vector_create()
 }
 
 emit = ParticlePointEmitter();
 emit.init(250, {
-	position: [WIDTH/2, HEIGHT/2],
+	position: vector_create(WIDTH/2, HEIGHT/2),
 	angle: 90,
 	angleRandom: 10,
 	duration: -1,
 	finishColor: [255, 45, 10, 0],
 	finishColorRandom: [40,40,40,0],
 	forcePoints: [],
-	gravity: [0,.03],
+	gravity: vector_create(0,.03),
 	lifeSpan: 1,
 	lifeSpanRandom: 0,
-	positionRandom: [3,3],
+	positionRandom: vector_create(3,3),
 	sharpness: 15,
 	sharpnessRandom: 12,
 	size: 20,
-	finishSize: 40,
+	finishSize: 50,
 	sizeRandom: 4,
 	speed: 5,
 	speedRandom: 1,
@@ -726,7 +726,7 @@ emit.init(250, {
 
 
 var animFrame = function(t) {
-	var frameInd = ((frameCount/6)<<0) % WATER_FRAMES;
+	var frameInd = (~~(frameCount/6)) % WATER_FRAMES;
 
 	if (prevFrameInd != frameInd) {
 		Tch.fillStyle = water_frames[frameInd];
@@ -736,27 +736,30 @@ var animFrame = function(t) {
 
 	var speed = KEYS[SPACE] ? 0.35 : 0.2;
 	if (KEYS[LEFT]) {
-		Player.vx = max(-10, Player.vx-speed);
+		Player.v.x = max(-10, Player.v.x-speed);
+		Player.leftFace = true;
 	}
-	if (KEYS[RIGHT]) {
-		Player.vx = min(10, Player.vx+speed);
+	else if (KEYS[RIGHT]) {
+		Player.v.x = min(10, Player.v.x+speed);
+		Player.leftFace = false;
+	}
+	else {
+		Player.leftFace = Player.angle > PI/2 || Player.angle < -PI/2
 	}
 //	if (KEYS[UP]) {
-//		Player.vy = max(-3, Player.vy-.1);
+//		Player.v.y = max(-3, Player.v.y-.1);
 //	}
 //	if (KEYS[DOWN]) {
-//		Player.vy = min(3, Player.vy+.1);
+//		Player.v.y = min(3, Player.v.y+.1);
 //	}
 	emit.active = KEYS[SPACE];
-	Player.vx *= .95;
-	Player.vy *= .95;
-	Player.x += Player.vx;
-	Player.y += Player.vy;
-	Player.vy += KEYS[SPACE] ? -.3 : .7;
-	if (Player.y > HEIGHT+150) Player.y = 0;
+	Player.v.scale(.95)
+	Player.pos.add(Player.v)
+	Player.v.y += minmax(-10,10, KEYS[SPACE] ? -.2 : .7);
+	if (Player.pos.y > HEIGHT+150) Player.pos.y = 0;
 
-	emit.position[0] = Player.x-(Player.flipped? 5: 15);
-	emit.position[1] = Player.y-25;
+	emit.position.x = Player.pos.x-(Player.leftFace ? 5: 15);
+	emit.position.y = Player.pos.y-25;
 	
 	updateWater();
 	emit.update(16);
@@ -771,8 +774,8 @@ var animFrame = function(t) {
 	C.restore()
 
 	if (red_man) {
-		var angle = Math.atan2(MOUSE_POS.y - Player.y, MOUSE_POS.x - Player.x);
-		draw_man(0, Player.x, Player.y, angle);
+		Player.angle = Math.atan2(MOUSE_POS.y - Player.pos.y, MOUSE_POS.x - Player.pos.x);
+		draw_man(0, Player.pos, Player.angle);
 	}
 
 	renderWater();

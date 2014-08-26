@@ -5,34 +5,43 @@
 
   Modified:
     forcePoints to push and pull particles
-    wind
+    wind function
+    render particle method
 */
 
 
 
 /* Vector Helper */
+vector_create=function( x, y ){
+    return {x:x || 0,y: y || 0,
+    	scale: function(s) { this.x *= s; this.y *= s},
+    	add: function(v) {this.x += v.x; this.y += v.y}
+//    	,len2: function() {return sq(this.x)+sq(this.y)}
+    }
+}
+
 vector_multiply= function( vector, scaleFactor ){
-    return [vector[0] * scaleFactor,
-            vector[1] * scaleFactor];
+    return vector_create(vector.x * scaleFactor,
+            vector.y * scaleFactor);
 }
 vector_add = function( vector1, vector2 ){
-    return [vector1[0] + vector2[0],
-            vector1[1] + vector2[1]];
+    return vector_create(vector1.x + vector2.x,
+            vector1.y + vector2.y);
 }
 vector_sub = function (vector1, vector2) {
-    return [vector1[0] - vector2[0],
-            vector1[1] - vector2[1]];
+    return vector_create(vector1.x - vector2.x,
+            vector1.y - vector2.y);
 }
-vector_len= function(vector) {
-    return vector[0]*vector[0] + vector[1]*vector[1];
-}
+//vector_len2= function(vector) {
+//    return sq(vector.x) + sq(vector.y);
+//}
 
 
 // Individual particle
 Particle = function() {
 	return {
 		// really everything is overwritten - no need setting defaults
-	    position: [0,0],
+	    position: vector_create(0,0),
 //	    direction: [0,0],
 //	    size: 0,
 //	    sizeSmall: 0,
@@ -41,9 +50,23 @@ Particle = function() {
 //	    drawColor: "",
 	    deltaColor: [],
 //	    deltaSize: 0,
-//	    sharpness: 0
+//	    sharpness: 0,
+	    
+	    render: function(context) {
+            var size = this.size;
+			var halfSize = size >> 1;
+			var x = ~~this.position.x;
+			var y = ~~this.position.y;
+					
+			var radgrad = context.createRadialGradient( x + halfSize, y + halfSize, this.sizeSmall, x + halfSize, y + halfSize, halfSize);  
+			radgrad.addColorStop( 0, this.drawColor );   
+			radgrad.addColorStop( 1, 'rgba(0,0,0,0)' );
+			context.fillStyle = radgrad;
+		  	context.fillRect( x, y, size, size );
+	    }
 	}
 }
+
 
 
 
@@ -67,6 +90,7 @@ ParticlePointEmitter = function() {
 //	    sharpness: 35,
 //	    sharpnessRandom: 12,
 	    forcePoints: [], // pairs of weight and location.  positive weight attracts, negative weight pushes
+	    wind: null, // function returning value of wind - can change over time
 	
 	
 	    init: function(maxParticles, options) {
@@ -76,9 +100,9 @@ ParticlePointEmitter = function() {
 		        graveyard: [],
 		        active: true,
 
-		//        this.position =  [300, 300];
-		        positionRandom:  [ 12, 12 ],
-		        gravity:  [ 0.0, 0.3 ],
+		//        this.position = vector_create(300, 300);
+		        positionRandom:  vector_create(12, 12),
+		        gravity:  vector_create( 0.0, 0.3),
 		
 		        elapsedTime: 0,
 		        duration: -1,
@@ -115,11 +139,11 @@ ParticlePointEmitter = function() {
 		
 		initParticle: function( particle ){
 	
-			particle.position[0] = this.position[0] + this.positionRandom[0] * rndab(-1,1);
-			particle.position[1] = this.position[1] + this.positionRandom[1] * rndab(-1,1);
+			particle.position.x = this.position.x + this.positionRandom.x * rndab(-1,1);
+			particle.position.y = this.position.y + this.positionRandom.y * rndab(-1,1);
 	
 			var newAngle = (this.angle + this.angleRandom * rndab(-1,1) ) * ( Math.PI / 180 ); // convert to radians
-			var vector = [ Math.cos( newAngle ), Math.sin( newAngle ) ]; // Could move to lookup for speed
+			var vector = vector_create(Math.cos( newAngle ), sin( newAngle ));
 			var vectorSpeed = this.speed + this.speedRandom * rndab(-1,1);
 			particle.direction = vector_multiply( vector, vectorSpeed );
 	
@@ -202,7 +226,7 @@ ParticlePointEmitter = function() {
 	                    var force = vector_multiply(dir, weight/**1/dist*/);
 	                    currentParticle.direction = vector_add( currentParticle.direction, force);
 	                }
-					currentParticle.position = vector_add( currentParticle.position, currentParticle.direction );
+					currentParticle.position.add( currentParticle.direction );
 					currentParticle.timeToLive -= delta;
 					
 					currentParticle.size += currentParticle.deltaSize * delta;
@@ -245,16 +269,7 @@ ParticlePointEmitter = function() {
 		
 		renderParticles: function( context ){
 	        each(this.particles, function(particle, particleIndex) {
-	            var size = particle.size;
-				var halfSize = size >> 1;
-				var x = ~~particle.position[0];
-				var y = ~~particle.position[1];
-						
-				var radgrad = context.createRadialGradient( x + halfSize, y + halfSize, particle.sizeSmall, x + halfSize, y + halfSize, halfSize);  
-				radgrad.addColorStop( 0, particle.drawColor );   
-				radgrad.addColorStop( 1, 'rgba(0,0,0,0)' ); //Super cool if you change these values (and add more color stops)
-				context.fillStyle = radgrad;
-			  	context.fillRect( x, y, size, size );
+	        	particle.render(context);
 	            //context.arc(x,y, halfSize, Math.PI*2, false);
 			});
 		}
