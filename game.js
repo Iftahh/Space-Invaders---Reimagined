@@ -16,15 +16,16 @@ brrange = function(maxInt,iterFu,increment) {
         if (res) return res;
     }
 }
+
+// return non-false value from iterator will break the loop
 each = function(collection, iterFu) {
-    for (var i=0; i<collection.length; i++) {
+	// looping from end to start - to allow easy removal of iterated element without skipping 
+    for (var i=collection.length-1; i>=0; i--) {
         var $=collection[i];
-        iterFu($,i);
+        if (iterFu($,i)) {
+        	return;
+        }
     }
-}
-//breaking-each - will return non-false value from iterator and break the loop
-breach = function(collection, iterFu) { // breaking each: collection, iterator   
-	return brrange(collection.length, function(i) {var $=collection[i]; return iterFu($,i);})
 }
 
 duRange = function(w,h, fu) {
@@ -124,6 +125,24 @@ var r2c=function (width, height, renderFunction) {
     return canvas;
 }
 
+LEFT = 37;
+RIGHT = 39;
+UP = 38;
+DOWN = 40;
+SPACE = 32;
+var KEYS={}
+
+var updateFromKeys = function(e) {
+    KEYS[e.keyCode]=  e.type == "keydown";
+    if (e.keyCode == 32 || e.keyCode >=37 && e.keyCoe <= 40)
+        e.preventDefault();
+}
+DC.addEventListener('keydown', updateFromKeys)
+DC.addEventListener('keyup', updateFromKeys)
+
+DC.body.addEventListener('touchmove', function(event) {
+    event.preventDefault();
+}, false);
 
 
 // taken from http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
@@ -281,16 +300,13 @@ function initLevel() {
 					i+=4;
 					continue;
 				}
-				VoronoiDemo.sites.push(site);
+				//VoronoiDemo.sites.push(site);
 				i += 4;
 			}
 		}
-		VoronoiDemo.diagram = VoronoiDemo.voronoi.compute(VoronoiDemo.sites, VoronoiDemo.bbox);
-		VoronoiDemo.render();
 	});
 	//level.draw(0,0,LevelW, LevelH);
 }
-enable_voronoi = false;
 
 yellow_man = red_man = 0;
 
@@ -371,7 +387,7 @@ sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
 
 var sky_pattern = C.createPattern(sky_canvas, 'repeat-x');
 
-if (enable_voronoi) {
+if (false) {
 
 
 	
@@ -571,7 +587,7 @@ canvases[2].addEventListener('mousemove', function(evt) {
 
 
 
-if (enable_voronoi) {
+if (false) {
 	
 	var filtered = Filters.filterCanvas(Filters.convolute, ice_canvas,
 			  [   .1,  .1,  .1,
@@ -587,8 +603,6 @@ if (enable_voronoi) {
 	
 	//test.draw(0,0, width, height);
 
-	VoronoiDemo.init(canvases[1]);
-	
 	initLevel();
 }	
 
@@ -679,6 +693,17 @@ range(WATER_FRAMES, function(i) {
 	water_frames[i] = C.createPattern(water_canvas(i * TPI/WATER_FRAMES), 'no-repeat');
 })
 
+Player = {
+	x: WIDTH/2,
+	y: HEIGHT/2,
+	vx: 0,
+	vy: 0
+}
+
+emit = ParticlePointEmitter();
+emit.init(500, {position: [400, 400]})
+
+
 var animFrame = function(t) {
 	var frameInd = ((frameCount/6)<<0) % WATER_FRAMES;
 
@@ -686,15 +711,39 @@ var animFrame = function(t) {
 		Tch.fillStyle = water_frames[frameInd];
 		prevFrameInd = frameInd;
 	}
-	
+
 	updateWater();
+	emit.update(16);
+
+	
+	if (KEYS[LEFT]) {
+		Player.vx = max(-3, Player.vx-.1);
+	}
+	if (KEYS[RIGHT]) {
+		Player.vx = min(3, Player.vx+.1);
+	}
+	if (KEYS[UP]) {
+		Player.vy = max(-3, Player.vy-.1);
+	}
+	if (KEYS[DOWN]) {
+		Player.vy = min(3, Player.vy+.1);
+	}
+	Player.vx *= .9;
+	Player.vy *= .9;
+	Player.x += Player.vx;
+	Player.y += Player.vy;
+	
 	Tch.clearRect(0,0,WIDTH,HEIGHT);
 	C.clearRect(0,0,WIDTH,HEIGHT);
 	if (red_man) {
-		var angle = Math.atan2(MOUSE_POS.y - HEIGHT/2, MOUSE_POS.x - WIDTH/2);
-		draw_man(0, WIDTH/2, HEIGHT/2, angle)
+		var angle = Math.atan2(MOUSE_POS.y - Player.y, MOUSE_POS.x - Player.x);
+		draw_man(0, Player.x, Player.y, angle);
 	}
+
 	renderWater();
+	
+	emit.renderParticles(C)
+	emit2.renderParticles(C)
 	
 	//C.restore()
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
@@ -710,11 +759,11 @@ var animFrame = function(t) {
 	if (MOUSE_POS.x < 20 && OffsetX > 0) {
 		delta = -5;
 	}
-	if (enable_voronoi &&  delta) {
-		OffsetX += delta;
-		FdC.setTransform(1,0,0,1,-OffsetX,-OffsetY);
-		VoronoiDemo.render();
-	}
+//	if (enable_voronoi &&  delta) {
+//		OffsetX += delta;
+//		FdC.setTransform(1,0,0,1,-OffsetX,-OffsetY);
+//		VoronoiDemo.render();
+//	}
 	
     RQ(animFrame);
     
@@ -728,7 +777,3 @@ var animFrame = function(t) {
 };
 
 RQ(animFrame);
-//if (enable_voronoi)
-//	RQ(animFrame);
-//else
-//water_canvas(0).draw(0,0, WIDTH, HEIGHT)
