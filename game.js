@@ -345,8 +345,8 @@ draw_man = function(color, x,y,angle) {
 	var man = color ? red_man: yellow_man;
 	C.save();
 	C.translate(x-24,y-48);
-	if (angle > PI/2 || angle < -PI/2) {
-		C.translate(48,0)
+	if (Player.flipped = angle > PI/2 || angle < -PI/2) {
+		C.translate(48,0);
 		C.scale(-1,1);
 		angle = PI - angle;
 	}
@@ -701,7 +701,28 @@ Player = {
 }
 
 emit = ParticlePointEmitter();
-emit.init(500, {position: [400, 400]})
+emit.init(250, {
+	position: [WIDTH/2, HEIGHT/2],
+	angle: 90,
+	angleRandom: 10,
+	duration: -1,
+	finishColor: [255, 45, 10, 0],
+	finishColorRandom: [40,40,40,0],
+	forcePoints: [],
+	gravity: [0,.03],
+	lifeSpan: 1,
+	lifeSpanRandom: 0,
+	positionRandom: [3,3],
+	sharpness: 15,
+	sharpnessRandom: 12,
+	size: 20,
+	finishSize: 40,
+	sizeRandom: 4,
+	speed: 5,
+	speedRandom: 1,
+	startColor: [220, 188, 88, 1],
+	startColorRandom: [32, 35, 38, 0]
+})
 
 
 var animFrame = function(t) {
@@ -712,29 +733,43 @@ var animFrame = function(t) {
 		prevFrameInd = frameInd;
 	}
 
+
+	var speed = KEYS[SPACE] ? 0.35 : 0.2;
+	if (KEYS[LEFT]) {
+		Player.vx = max(-10, Player.vx-speed);
+	}
+	if (KEYS[RIGHT]) {
+		Player.vx = min(10, Player.vx+speed);
+	}
+//	if (KEYS[UP]) {
+//		Player.vy = max(-3, Player.vy-.1);
+//	}
+//	if (KEYS[DOWN]) {
+//		Player.vy = min(3, Player.vy+.1);
+//	}
+	emit.active = KEYS[SPACE];
+	Player.vx *= .95;
+	Player.vy *= .95;
+	Player.x += Player.vx;
+	Player.y += Player.vy;
+	Player.vy += KEYS[SPACE] ? -.3 : .7;
+	if (Player.y > HEIGHT+150) Player.y = 0;
+
+	emit.position[0] = Player.x-(Player.flipped? 5: 15);
+	emit.position[1] = Player.y-25;
+	
 	updateWater();
 	emit.update(16);
 
 	
-	if (KEYS[LEFT]) {
-		Player.vx = max(-3, Player.vx-.1);
-	}
-	if (KEYS[RIGHT]) {
-		Player.vx = min(3, Player.vx+.1);
-	}
-	if (KEYS[UP]) {
-		Player.vy = max(-3, Player.vy-.1);
-	}
-	if (KEYS[DOWN]) {
-		Player.vy = min(3, Player.vy+.1);
-	}
-	Player.vx *= .9;
-	Player.vy *= .9;
-	Player.x += Player.vx;
-	Player.y += Player.vy;
-	
 	Tch.clearRect(0,0,WIDTH,HEIGHT);
 	C.clearRect(0,0,WIDTH,HEIGHT);
+
+	C.save()
+	C.globalCompositeOperation = "lighter";
+	emit.renderParticles(C);
+	C.restore()
+
 	if (red_man) {
 		var angle = Math.atan2(MOUSE_POS.y - Player.y, MOUSE_POS.x - Player.x);
 		draw_man(0, Player.x, Player.y, angle);
@@ -742,10 +777,6 @@ var animFrame = function(t) {
 
 	renderWater();
 	
-	emit.renderParticles(C)
-	emit2.renderParticles(C)
-	
-	//C.restore()
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
 	water_y -= 0.01;
 	if (water_y<200) {

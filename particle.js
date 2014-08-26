@@ -11,9 +11,6 @@
 
 
 /* Vector Helper */
-vector_create=function( x, y ){
-    return [x || 0,y || 0]
-}
 vector_multiply= function( vector, scaleFactor ){
     return [vector[0] * scaleFactor,
             vector[1] * scaleFactor];
@@ -34,15 +31,17 @@ vector_len= function(vector) {
 // Individual particle
 Particle = function() {
 	return {
-	    position: vector_create(),
-	    direction: vector_create(),
-	    size: 0,
-	    sizeSmall: 0,
-	    timeToLive: 0,
+		// really everything is overwritten - no need setting defaults
+	    position: [0,0],
+//	    direction: [0,0],
+//	    size: 0,
+//	    sizeSmall: 0,
+//	    timeToLive: 0,
 	    color: [],
-	    drawColor: "",
+//	    drawColor: "",
 	    deltaColor: [],
-	    sharpness: 0
+//	    deltaSize: 0,
+//	    sharpness: 0
 	}
 }
 
@@ -50,26 +49,23 @@ Particle = function() {
 
 ParticlePointEmitter = function() {
 	return {
-	    particles: null,
-	    maxParticles: null,
-	
-	    dim: 2,
-	
+//	    particles: null,
+//	    maxParticles: null,
 	    // Default Properties
-	    size: 30,
-	    sizeRandom: 12,
-	    speed: 6,
-	    speedRandom: 2,
-	    angle: 0,
-	    angleRandom: 180,
-	    lifeSpan: 8,
-	    lifeSpanRandom: 6,
-	    startColor: [ 220, 208, 88, 1 ],
-	    startColorRandom: [ 52, 55, 58, 0 ],
-	    finishColor: [ 255, 45, 10, 0 ],
-	    finishColorRandom: [ 40, 40, 40, 0 ],
-	    sharpness: 35,
-	    sharpnessRandom: 12,
+//	    size: 30,
+//	    sizeRandom: 12,
+//	    speed: 6,
+//	    speedRandom: 2,
+//	    angle: 0,
+//	    angleRandom: 180,
+//	    lifeSpan: 8,
+//	    lifeSpanRandom: 6,
+//	    startColor: [ 220, 208, 88, 1 ],
+//	    startColorRandom: [ 52, 55, 58, 0 ],
+//	    finishColor: [ 255, 45, 10, 0 ],
+//	    finishColorRandom: [ 40, 40, 40, 0 ],
+//	    sharpness: 35,
+//	    sharpnessRandom: 12,
 	    forcePoints: [], // pairs of weight and location.  positive weight attracts, negative weight pushes
 	
 	
@@ -80,9 +76,9 @@ ParticlePointEmitter = function() {
 		        graveyard: [],
 		        active: true,
 
-		//        this.position =  vector_create( 300, 300 );
-		        positionRandom:  vector_create( 12, 12 ),
-		        gravity:  vector_create( 0.0, 0.3 ),
+		//        this.position =  [300, 300];
+		        positionRandom:  [ 12, 12 ],
+		        gravity:  [ 0.0, 0.3 ],
 		
 		        elapsedTime: 0,
 		        duration: -1,
@@ -97,6 +93,9 @@ ParticlePointEmitter = function() {
 	    setOptions: function(options) {
 	        for (var k in options) {
 	            this[k] = options[k];
+	        }
+	        if (!this.finishSize) {
+	        	this.finishSize = this.size;
 	        }
 	        this.emissionRate = this.maxParticles / this.lifeSpan;
 	    },
@@ -120,12 +119,14 @@ ParticlePointEmitter = function() {
 			particle.position[1] = this.position[1] + this.positionRandom[1] * rndab(-1,1);
 	
 			var newAngle = (this.angle + this.angleRandom * rndab(-1,1) ) * ( Math.PI / 180 ); // convert to radians
-			var vector = vector_create( Math.cos( newAngle ), Math.sin( newAngle ) ); // Could move to lookup for speed
+			var vector = [ Math.cos( newAngle ), Math.sin( newAngle ) ]; // Could move to lookup for speed
 			var vectorSpeed = this.speed + this.speedRandom * rndab(-1,1);
 			particle.direction = vector_multiply( vector, vectorSpeed );
 	
 			particle.size = this.size + this.sizeRandom * rndab(-1,1);
-			particle.size = particle.size < 0 ? 0 : ~~particle.size;
+			particle.size = particle.size <= 1 ? 1 : ~~particle.size;
+			particle.finishSize = this.finishSize + this.sizeRandom * rndab(-1,1);
+			
 			particle.timeToLive = this.lifeSpan + this.lifeSpanRandom * rndab(-1,1);
 			
 			particle.sharpness = this.sharpness + this.sharpnessRandom * rndab(-1,1);
@@ -156,6 +157,7 @@ ParticlePointEmitter = function() {
 			particle.deltaColor[ 1 ] = ( end[ 1 ] - start[ 1 ] ) / particle.timeToLive;
 			particle.deltaColor[ 2 ] = ( end[ 2 ] - start[ 2 ] ) / particle.timeToLive;
 			particle.deltaColor[ 3 ] = ( end[ 3 ] - start[ 3 ] ) / particle.timeToLive;
+			particle.deltaSize = (particle.finishSize - particle.size) / particle.timeToLive;
 	
 	        if (isNaN(particle.deltaColor[ 2 ]) ) {
 	            console.log("Error");
@@ -202,6 +204,9 @@ ParticlePointEmitter = function() {
 	                }
 					currentParticle.position = vector_add( currentParticle.position, currentParticle.direction );
 					currentParticle.timeToLive -= delta;
+					
+					currentParticle.size += currentParticle.deltaSize * delta;
+					currentParticle.sizeSmall = ~~( ( currentParticle.size / 200 ) * currentParticle.sharpness ); //(size/2/100)
 	
 	                if (isNaN(currentParticle.color[ 2 ]) ) {
 	                    console.log("Error");
