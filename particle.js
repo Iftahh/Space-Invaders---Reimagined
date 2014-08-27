@@ -52,6 +52,7 @@ Particle = function() {
 //	    deltaSize: 0,
 //	    sharpness: 0,
 	    
+	    // allow to override render
 	    render: function(context) {
             var size = this.size;
 			var halfSize = size >> 1;
@@ -70,8 +71,8 @@ Particle = function() {
 
 
 
-ParticlePointEmitter = function() {
-	return {
+ParticlePointEmitter = function(maxParticles, options) {
+	res = {
 //	    particles: null,
 //	    maxParticles: null,
 	    // Default Properties
@@ -91,7 +92,9 @@ ParticlePointEmitter = function() {
 //	    sharpnessRandom: 12,
 	    forcePoints: [], // pairs of weight and location.  positive weight attracts, negative weight pushes
 	    wind: null, // function returning value of wind - can change over time
+	    area: 0.3, // used to calculate wind affect
 	
+	    updateParticle: function() {},
 	
 	    init: function(maxParticles, options) {
 			this.setOptions({
@@ -126,7 +129,7 @@ ParticlePointEmitter = function() {
 		
 		addParticle: function(){
 			if(this.particles.length == this.maxParticles) {
-				return false;
+				return null;
 			}
 			
 			// Take the next particle out of the particle pool we have created and initialize it
@@ -134,7 +137,7 @@ ParticlePointEmitter = function() {
 			var particle = this.graveyard.shift() || Particle();
 			this.initParticle( particle );
 	        this.particles.push(particle);
-			return true;
+			return particle;
 		},
 		
 		initParticle: function( particle ){
@@ -142,7 +145,7 @@ ParticlePointEmitter = function() {
 			particle.position.x = this.position.x + this.positionRandom.x * rndab(-1,1);
 			particle.position.y = this.position.y + this.positionRandom.y * rndab(-1,1);
 	
-			var newAngle = (this.angle + this.angleRandom * rndab(-1,1) ) * ( Math.PI / 180 ); // convert to radians
+			var newAngle = (this.angle + this.angleRandom * rndab(-1,1) ) * ( PI / 180 ); // convert to radians
 			var vector = vector_create(Math.cos( newAngle ), sin( newAngle ));
 			var vectorSpeed = this.speed + this.speedRandom * rndab(-1,1);
 			particle.direction = vector_multiply( vector, vectorSpeed );
@@ -212,6 +215,13 @@ ParticlePointEmitter = function() {
 					// Calculate the new direction based on gravity
 	                if (that.gravity)
 					    currentParticle.direction = vector_add( currentParticle.direction, that.gravity );
+	                
+	                // wind speed - only horizontal
+	                if (that.wind) {
+	                	currentParticle.direction.x += windForce(that.wind(currentParticle),
+	                											 currentParticle.direction.x,
+	                											 that.area);
+	                }
 	
 	                for (var i=0; i<that.forcePoints.length; i++) {
 	                    var fp = that.forcePoints[i];
@@ -232,27 +242,29 @@ ParticlePointEmitter = function() {
 					currentParticle.size += currentParticle.deltaSize * delta;
 					currentParticle.sizeSmall = ~~( ( currentParticle.size / 200 ) * currentParticle.sharpness ); //(size/2/100)
 	
-	                if (isNaN(currentParticle.color[ 2 ]) ) {
-	                    console.log("Error");
-	                }
-	                if (isNaN(currentParticle.deltaColor[ 2 ]) ) {
-	                    console.log("Error");
-	                }
+//	                if (isNaN(currentParticle.color[ 2 ]) ) {
+//	                    console.log("Error");
+//	                }
+//	                if (isNaN(currentParticle.deltaColor[ 2 ]) ) {
+//	                    console.log("Error");
+//	                }
 					// Update colors based on delta
 					var r = currentParticle.color[ 0 ] += ( currentParticle.deltaColor[ 0 ] * delta );
 					var g = currentParticle.color[ 1 ] += ( currentParticle.deltaColor[ 1 ] * delta );
 					var b = currentParticle.color[ 2 ] += ( currentParticle.deltaColor[ 2 ] * delta );
 					var a = currentParticle.color[ 3 ] += ( currentParticle.deltaColor[ 3 ] * delta );
-	                if (isNaN(a) ) {
-	                    console.log("Error");
-	                }
+//	                if (isNaN(a) ) {
+//	                    console.log("Error");
+//	                }
 					// Calculate the rgba string to draw.
 					var draw = [];
-					draw.push("rgba(" + ( r > 255 ? 255 : r < 0 ? 0 : ~~r ) );
-					draw.push( g > 255 ? 255 : g < 0 ? 0 : ~~g );
-					draw.push( b > 255 ? 255 : b < 0 ? 0 : ~~b );
-					draw.push( (a > 1 ? 1 : a < 0 ? 0 : a.toFixed( 2 ) ) + ")");
+					draw.push("rgba(" + minmax(0,255, ~~r) );
+					draw.push( minmax(0,255, ~~g));
+					draw.push( minmax(0,255, ~~b));
+					draw.push( minmax(0,1, a.toFixed(2)) + ")");
 					currentParticle.drawColor = draw.join( "," );
+					
+					that.updateParticle(currentParticle);
 	
 				} else {
 					that.particles.splice(particleIndex,1);
@@ -274,4 +286,6 @@ ParticlePointEmitter = function() {
 			});
 		}
 	}
+	res.init(maxParticles, options);
+	return res;
 }

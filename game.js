@@ -61,14 +61,14 @@ range(3, function(i) {
 });
 
 // Forward (front) Context
-FdC = canvases[1].getContext("2d")
+FdC = contexts[1]
 C = FdC; // current canvas to draw to - may toggle around for double buffering
 
 // Background context
-BgC = canvases[0].getContext("2d")
+BgC = contexts[0]
 
 // Top context (overlay)
-Tch = canvases[2].getContext("2d")
+Tch = contexts[2]
 
 
 rnd = Math.random;
@@ -79,10 +79,9 @@ sin= Math.sin;
 round = Math.round;
 sqrt=Math.sqrt;
 sq=function(x){return x*x}
-OA = 255; // opaque alpha
+U8 = 255; // max unsigned 8bit
 PI = Math.PI;
 TPI = 2*PI;
-
 
 
 // random in range [0,a)
@@ -207,7 +206,7 @@ Filters = {
 		      dst[dstOff++] = r;
 		      dst[dstOff++] = g;
 		      dst[dstOff++] = b;
-		      dst[dstOff++] = OA;//a + alphaFac*(255-a);
+		      dst[dstOff++] = U8;//a + alphaFac*(255-a);
 		  })
 		  return output;
 		}
@@ -372,7 +371,7 @@ sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
     	d[i++] = 40; // red
 		d[i++] = 50; // green
 		d[i++] = 80; // blue;    		
-		d[i++] = OA;
+		d[i++] = U8;
     })
     var row_offset = sky_width*4; // 4 bytes per pixel
     duRange(sky_width, HEIGHT-1, function() {
@@ -382,7 +381,7 @@ sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
 		i++;
 		d[i] = (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-5,3));
 		i++;
-		d[i++] = OA;    	
+		d[i++] = U8;    	
     });
     ctx.putImageData(imgData,0,0);
 })
@@ -405,7 +404,7 @@ if (false) {
 	    	d[i++] = red(x,y);
     		d[i++] = green(x,y);
     		d[i++] = blue(x,y);    		
-    		d[i++] = OA;
+    		d[i++] = U8;
 	    });
 	    ctx.putImageData(imgData,0,0);
 	})
@@ -423,7 +422,7 @@ if (false) {
 	    	d[i++] = red(x,y)
     		d[i++] = green(x,y);
     		d[i++] = blue(x,y);    		
-    		d[i++] = OA;
+    		d[i++] = U8;
 	    })
 	    ctx.putImageData(imgData,0,0);
 	})
@@ -449,7 +448,7 @@ if (false) {
 //    		d[i++] = wavy(x,y, grp);
 //    		d[i++] = wavy(x,y, blp);
 //   		
-//    		d[i++] = OA;
+//    		d[i++] = U8;
 //    	}
 //    }
 //    ctx.putImageData(imgData,0,0);
@@ -561,7 +560,7 @@ for (var y=0;y<HEIGHT;y++) {
 		waterPixels[i++] = 20+(curR+prevR >>1) + round(sin(y*TPI/10)*5); //red(x,y)
 		waterPixels[i++] = 25+(curG+prevG >>1) +round(sin(y*TPI/12)*5);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
 		waterPixels[i++] = 30+(curB+prevB >>1) +round(sin(y*TPI/13)*8);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
-		waterPixels[i++] = OA;
+		waterPixels[i++] = U8;
 		
 		prevR = curR;
 		prevG = curG;
@@ -674,7 +673,7 @@ water_canvas = function(P) {
 //	//	    	d[i++] = ( ((5*((x+WIDTH)*s))&1) + ((5*((WIDTH*2-x)*s))&1))*127;
 //	//	  		d[i++] = (((29*((x+WIDTH)*s))&1)+((29*((WIDTH*2-x)*s))&1))*127;
 //	//	 		
-//		  		d[i++] = OA;
+//		  		d[i++] = U8;
 //		  	}
 //		  }
 		  ctx.putImageData(imgData,0,0);
@@ -690,6 +689,15 @@ BgC.fillRect(0,0,WIDTH,HEIGHT);
 var prevFrameInd;
 Tch.globalAlpha = 0.9;
 
+wind = 1.5;
+WIND = function() {return wind; }
+
+// based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
+windForce=  function(wind, speed, area) {
+	var dv = wind - speed;
+	return minmax(-10,10, abs(dv)*dv*area);
+}
+
 WATER_FRAMES = 2;//20
 range(WATER_FRAMES, function(i) {
 	water_frames[i] = C.createPattern(water_canvas(i * TPI/WATER_FRAMES), 'no-repeat');
@@ -700,29 +708,90 @@ Player = {
 	v: vector_create()
 }
 
-emit = ParticlePointEmitter();
-emit.init(250, {
+jetpack = ParticlePointEmitter(250, {
 	position: vector_create(WIDTH/2, HEIGHT/2),
 	angle: 90,
 	angleRandom: 10,
 	duration: -1,
 	finishColor: [255, 45, 10, 0],
 	finishColorRandom: [40,40,40,0],
-	forcePoints: [],
 	gravity: vector_create(0,.03),
 	lifeSpan: 1,
 	lifeSpanRandom: 0,
 	positionRandom: vector_create(3,3),
-	sharpness: 15,
+	sharpness: 12,
 	sharpnessRandom: 12,
 	size: 20,
 	finishSize: 50,
 	sizeRandom: 4,
-	speed: 5,
+	speed: 4,
 	speedRandom: 1,
 	startColor: [220, 188, 88, 1],
-	startColorRandom: [32, 35, 38, 0]
-})
+	startColorRandom: [32, 35, 38, 0],
+	updateParticle: function(particle) {
+		if (particle.position.y > water_y) {
+			particle.timeToLive = 0;
+			var smokePar = smoke.addParticle();
+			if (smokePar) {
+				smokePar.position.x = particle.position.x;
+				smokePar.position.y = particle.position.y;
+			}
+		}
+	},
+	wind: WIND,
+	area: 0.1
+});
+
+smoke = ParticlePointEmitter(250, {
+	active:false,
+	position: vector_create(),
+	angle: -90,
+	angleRandom: 20,
+	duration: 10,
+	finishColor: [40, 40, 40, 0],
+	finishColorRandom: [10,10,10,0],
+	gravity: vector_create(0,-.03),
+	lifeSpan: .8,
+	lifeSpanRandom: 0.2,
+	positionRandom: vector_create(2,2),
+	sharpness: 12,
+	sharpnessRandom: 12,
+	size: 30,
+	finishSize: 40,
+	sizeRandom: 4,
+	speed: 1,
+	speedRandom: 0,
+	startColor: [220, 220, 220, 1],
+	startColorRandom: [22, 22, 22, 0],
+	wind: WIND,
+	area: 0.8
+});
+
+
+water = ParticlePointEmitter(180, {
+	active:false,
+	position: vector_create(),
+	angle: -90,
+	angleRandom: 40,
+	duration: 0.15,
+	finishColor: [40, 70, 140, 0],
+	finishColorRandom: [10,10,10,0],
+	gravity: vector_create(0,.5),
+	lifeSpan: 1.2,
+	lifeSpanRandom: 0.2,
+	positionRandom: vector_create(16,4),
+	sharpness: 42,
+	sharpnessRandom: 12,
+	size: 20,
+	finishSize: 6,
+	sizeRandom: 2,
+	speed: 2,
+	speedRandom: .5,
+	startColor: [40, 50, 120, .95],
+	startColorRandom: [12, 12, 12, 0],
+});
+
+
 
 
 var animFrame = function(t) {
@@ -734,7 +803,7 @@ var animFrame = function(t) {
 	}
 
 
-	var speed = KEYS[SPACE] ? 0.35 : 0.2;
+	var speed = KEYS[SPACE] ? 1.65 : 0.3;
 	if (KEYS[LEFT]) {
 		Player.v.x = max(-10, Player.v.x-speed);
 		Player.leftFace = true;
@@ -746,23 +815,40 @@ var animFrame = function(t) {
 	else {
 		Player.leftFace = Player.angle > PI/2 || Player.angle < -PI/2
 	}
+	Player.v.x += windForce(WIND(), Player.v.x, .02);
 //	if (KEYS[UP]) {
 //		Player.v.y = max(-3, Player.v.y-.1);
 //	}
 //	if (KEYS[DOWN]) {
 //		Player.v.y = min(3, Player.v.y+.1);
 //	}
-	emit.active = KEYS[SPACE];
-	Player.v.scale(.95)
-	Player.pos.add(Player.v)
-	Player.v.y += minmax(-10,10, KEYS[SPACE] ? -.2 : .7);
-	if (Player.pos.y > HEIGHT+150) Player.pos.y = 0;
+	jetpack.active = KEYS[SPACE];
+	Player.v.scale(.98)
+	Player.v.y = minmax(-10,10, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
+	var above = Player.pos.y < water_y
+	Player.pos.add(Player.v);
+	if (Player.pos.y > water_y) {
+		if (above) {
+			var x = Player.pos.x;
+			if (x < WIDTH && x>0)
+				springs[~~(springs.length*(1-x/WIDTH))].velocity = 12*Player.v.y;
+			water.active = true;
+			water.position.x = x;
+			water.position.y = Player.pos.y;
+			water.speed = Player.v.y;
+			water.angle = Math.atan2(-abs(Player.v.y), Player.v.x) * 180/PI;
+		}
+		if (Player.pos.y> water_y+100)
+			Player.pos.y = 0;
+	}
 
-	emit.position.x = Player.pos.x-(Player.leftFace ? 5: 15);
-	emit.position.y = Player.pos.y-25;
+	jetpack.position.x = Player.pos.x-(Player.leftFace ? 5: 15);
+	jetpack.position.y = Player.pos.y-25;
 	
 	updateWater();
-	emit.update(16);
+	jetpack.update(16);
+	smoke.update(16);
+	water.update(16);
 
 	
 	Tch.clearRect(0,0,WIDTH,HEIGHT);
@@ -770,8 +856,10 @@ var animFrame = function(t) {
 
 	C.save()
 	C.globalCompositeOperation = "lighter";
-	emit.renderParticles(C);
+	jetpack.renderParticles(C);
 	C.restore()
+	water.renderParticles(C);
+	smoke.renderParticles(C);
 
 	if (red_man) {
 		Player.angle = Math.atan2(MOUSE_POS.y - Player.pos.y, MOUSE_POS.x - Player.pos.x);
