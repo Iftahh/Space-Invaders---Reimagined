@@ -3,15 +3,13 @@
 DC = document;
 
 
-range = function(maxInt,iterFu,increment) {
-    increment = increment || 1;
-    for (var i=0; i<maxInt; i += increment)
+range = function(maxInt,iterFu) {
+    for (var i=0; i<maxInt; i++)
         iterFu(i)
 }
 // breaking-range - will return non-false value from iterator and break the loop
-brrange = function(maxInt,iterFu,increment) {
-    increment = increment || 1;
-    for (var i=0; i<maxInt; i += increment) {
+brrange = function(maxInt,iterFu) {
+    for (var i=0; i<maxInt; i++) {
         var res = iterFu(i)
         if (res) return res;
     }
@@ -87,11 +85,11 @@ TPI = 2*PI;
 // random in range [0,a)
 rnda = function(a) { return rnd()*a}
 // random integer in range [0,a-1]
-irnda = function(a) { return ~~rnda(a)}
+irnda = function(a) { return rnda(a)|0}
 // random in range [a,b)
 rndab = function(a,b) { return a+rnda(b-a)}
 // random integer in range [a,b-1] 
-irndab = function(a,b) { return ~~rndab(a,b) }
+irndab = function(a,b) { return rndab(a,b)|0 }
 
 
 // polyfill RequestAnimFrame
@@ -169,7 +167,7 @@ Filters = {
 	
 	convolute: function(pixels, weights, wrap) {
 		  var side = round(sqrt(weights.length));
-		  var halfSide = ~~(side/2);
+		  var halfSide = side/2|0;
 		  var src = pixels.data;
 		  var sw = pixels.width;
 		  var sh = pixels.height;
@@ -434,7 +432,7 @@ if (false) {
 //blp = [180, 100, 503, 103];
 //
 //wavy = function(x,y,p, yp1, yp2){
-//    return 63*(~~((sqrt(sq(p[0]-x)+yp1)+1)/((abs(sin((sqrt(sq(p[2]-x)+yp2))/115)))+1)/200));
+//    return 63*(((sqrt(sq(p[0]-x)+yp1)+1)/((abs(sin((sqrt(sq(p[2]-x)+yp2))/115)))+1)/200)|0);
 //}
 
 //
@@ -457,57 +455,67 @@ if (false) {
 // based on water tutorial 
 // http://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
 
-function updateSpring(spring, tension, damping, target_height) {
+function updateSpring(spring, dt, tension, damping, target_height) {
 	var x = spring.height - target_height;
 	var acceleration = -tension * x -damping*spring.velocity;
 	
-	spring.velocity += acceleration;
-	spring.height += spring.velocity;
+	spring.velocity += dt*acceleration;
+	spring.height += spring.velocity*dt;
 }
 
-water_y = HEIGHT-50;
+// globals
+water_y = HEIGHT-50;  // 50px above screen
+wind = 1.5;
+
+
+WATER_SPRING_DX = 10; // water spring every 10 pixels
+
 
 var springs = [];
-range(WIDTH/10+1, function() {
+range(WIDTH/WATER_SPRING_DX+1, function() {
 	springs.push({
 		height: water_y,
 		velocity: 0
 	})
 })
 
-function updateWater() {
+function updateWater(dt) {
 	var Spread = 0.25;
 	
+	var mx_v = 0;
 	each(springs, function($) {
-		updateSpring($, 0.020, 0.025, water_y);
+		updateSpring($, dt, 0.04, 0.025, water_y);
+		mx_v = max(mx_v, abs($.velocity))
 	})
 	 
 	var leftDeltas = [];
 	var rightDeltas = [];
-	             
-	// do some passes where springs pull on their neighbours
-	range(8, function() {
-	    for (var i = 0; i < springs.length; i++)
-	    {
-	        if (i > 0) {
-	            leftDeltas[i] = Spread * (springs[i].height - springs [i - 1].height);
-	            springs[i - 1].velocity += leftDeltas[i];
-	        }
-	        if (i < springs.length - 1)
-	        {
-	            rightDeltas[i] = Spread * (springs[i].height - springs [i + 1].height);
-	            springs[i + 1].velocity += rightDeltas[i];
-	        }
-	    }
-	 
-	    for (var i = 0; i < springs.length; i++)
-	    {
-	        if (i > 0)
-	            springs[i - 1].height += leftDeltas[i];
-	        if (i < springs.length - 1)
-	            springs[i + 1].height += rightDeltas[i];
-	    }
-	})
+	     
+	if (mx_v > 1) { 
+		// do some passes where springs pull on their neighbours
+		range(8, function() {
+		    for (var i = 0; i < springs.length; i++)
+		    {
+		        if (i > 0) {
+		            leftDeltas[i] = Spread * (springs[i].height - springs [i - 1].height);
+		            springs[i - 1].velocity += leftDeltas[i];
+		        }
+		        if (i < springs.length - 1)
+		        {
+		            rightDeltas[i] = Spread * (springs[i].height - springs [i + 1].height);
+		            springs[i + 1].velocity += rightDeltas[i];
+		        }
+		    }
+		 
+		    for (var i = 0; i < springs.length; i++)
+		    {
+		        if (i > 0)
+		            springs[i - 1].height += leftDeltas[i];
+		        if (i < springs.length - 1)
+		            springs[i + 1].height += rightDeltas[i];
+		    }
+		})
+	}
 }
 
 function renderWater() {
@@ -517,8 +525,12 @@ function renderWater() {
 	Tch.lineTo(0, HEIGHT);
 	var x=0;
 	each(springs, function($) {
-		Tch.lineTo(x, $.height + 4*sin(TPI*((frameCount+x)/100)))
-		x+= 10;
+		Tch.lineTo(x, $.height + 3*sin(TPI*((3*frameCount+x)/522) 
+							   + 4*sin(TPI*((2*frameCount+x)/511))
+							   + 4*sin(TPI*((frameCount+x)/533))
+				
+				))
+		x+= WATER_SPRING_DX;
 	})
 	Tch.closePath();
 	Tch.fill();
@@ -661,8 +673,8 @@ water_canvas = function(P) {
 //		    for (var x=0; x<WIDTH; x++) {
 //		    	var yy=(y+sin((x*x + yy0)/100/HEIGHT+P)*15)*s;
 //		    	
-//		    	var _x = ~~(WIDTH*(x-yy)/s);
-//		    	var _y = ~~(HEIGHT*(y-yy)/s);
+//		    	var _x = WIDTH*(x-yy)/s|0;
+//		    	var _y = HEIGHT*(y-yy)/s|0;
 //		    	
 //		    	
 //		    	d[i++] = waterPixels[_x+_y*WIDTH]//( (((x+WIDTH)*s+yy)&1)+(((2*WIDTH-x)*s+yy)&1))*127;
@@ -689,7 +701,6 @@ BgC.fillRect(0,0,WIDTH,HEIGHT);
 var prevFrameInd;
 Tch.globalAlpha = 0.9;
 
-wind = 1.5;
 WIND = function() {return wind; }
 
 // based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
@@ -698,7 +709,7 @@ windForce=  function(wind, speed, area) {
 	return minmax(-10,10, abs(dv)*dv*area);
 }
 
-WATER_FRAMES = 2;//20
+WATER_FRAMES = 2// 20
 range(WATER_FRAMES, function(i) {
 	water_frames[i] = C.createPattern(water_canvas(i * TPI/WATER_FRAMES), 'no-repeat');
 })
@@ -733,8 +744,10 @@ jetpack = ParticlePointEmitter(250, {
 			particle.timeToLive = 0;
 			var smokePar = smoke.addParticle();
 			if (smokePar) {
-				smokePar.position.x = particle.position.x;
+				var x = particle.position.x;
+				smokePar.position.x = x;
 				smokePar.position.y = particle.position.y;
+				springs[springs.length*(1-x/WIDTH) |0 + irndab(-1,2)].velocity += 1;
 			}
 		}
 	},
@@ -768,34 +781,47 @@ smoke = ParticlePointEmitter(250, {
 });
 
 
-water = ParticlePointEmitter(180, {
+water = ParticlePointEmitter(250, {
 	active:false,
 	position: vector_create(),
 	angle: -90,
 	angleRandom: 40,
 	duration: 0.15,
-	finishColor: [40, 70, 140, 0],
+	finishColor: [40, 70, 140, 1],
 	finishColorRandom: [10,10,10,0],
 	gravity: vector_create(0,.5),
 	lifeSpan: 1.2,
 	lifeSpanRandom: 0.2,
 	positionRandom: vector_create(16,4),
-	sharpness: 42,
+	sharpness: 82,
 	sharpnessRandom: 12,
-	size: 20,
-	finishSize: 6,
-	sizeRandom: 2,
-	speed: 2,
+	size: 18,
+	finishSize: 8,
+	sizeRandom: 1,
+	emissionRate: 100,
+	speed: 0,
 	speedRandom: .5,
-	startColor: [40, 50, 120, .95],
+	startColor: [40, 50, 120, 1],
 	startColorRandom: [12, 12, 12, 0],
+	updateParticle: function(particle) {
+		if (particle.position.y > water_y && particle.direction.y > 0) {
+			particle.timeToLive = 0;
+		}
+	}
 });
 
+//waterY = function(x) {
+//	var m = (x%WATER_SPRING_DX)/WATER_SPRING_DX;
+//	return springs[x/WATER_SPRING_DX | 0].height * m + (1-m)* springs[1+(x/WATER_SPRING_DX | 0)].height;
+//}
 
 
+var prev_t = 0;
 
 var animFrame = function(t) {
-	var frameInd = (~~(frameCount/6)) % WATER_FRAMES;
+	var dt = (t - prev_t)/32;
+	prev_t = t;
+	var frameInd = (frameCount/6 |0) % WATER_FRAMES;
 
 	if (prevFrameInd != frameInd) {
 		Tch.fillStyle = water_frames[frameInd];
@@ -803,13 +829,13 @@ var animFrame = function(t) {
 	}
 
 
-	var speed = KEYS[SPACE] ? 1.65 : 0.3;
+	var speed = KEYS[SPACE] ? 1.65 : 0.6;
 	if (KEYS[LEFT]) {
-		Player.v.x = max(-10, Player.v.x-speed);
+		Player.v.x = max(-12, Player.v.x-speed);
 		Player.leftFace = true;
 	}
 	else if (KEYS[RIGHT]) {
-		Player.v.x = min(10, Player.v.x+speed);
+		Player.v.x = min(9, Player.v.x+speed);
 		Player.leftFace = false;
 	}
 	else {
@@ -823,32 +849,40 @@ var animFrame = function(t) {
 //		Player.v.y = min(3, Player.v.y+.1);
 //	}
 	jetpack.active = KEYS[SPACE];
-	Player.v.scale(.98)
-	Player.v.y = minmax(-10,10, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
-	var above = Player.pos.y < water_y
-	Player.pos.add(Player.v);
+	var above = Player.pos.y < water_y;
+	Player.v.scale(above? .99 : 0.76) // air or water friction
+	Player.v.y = minmax(-12,22, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
+	var dist = vector_multiply(Player.v, dt)
+	Player.pos.add(dist);
 	if (Player.pos.y > water_y) {
 		if (above) {
 			var x = Player.pos.x;
 			if (x < WIDTH && x>0)
-				springs[~~(springs.length*(1-x/WIDTH))].velocity = 12*Player.v.y;
+				springs[springs.length*(1-x/WIDTH) |0].velocity = 22*Player.v.y;
 			water.active = true;
 			water.position.x = x;
-			water.position.y = Player.pos.y;
-			water.speed = Player.v.y;
+			water.position.y = Player.pos.y+40;
+			water.speed = 0.75*Player.v.y;
+			water.emissionRate = 20*abs(Player.v.y);
 			water.angle = Math.atan2(-abs(Player.v.y), Player.v.x) * 180/PI;
 		}
 		if (Player.pos.y> water_y+100)
 			Player.pos.y = 0;
 	}
+	if (Player.pos.x > WIDTH+10) {
+		Player.pos.x = 0;
+	}
+	if (Player.pos.x < -10) {
+		Player.pos.x = WIDTH;
+	} 
 
 	jetpack.position.x = Player.pos.x-(Player.leftFace ? 5: 15);
 	jetpack.position.y = Player.pos.y-25;
 	
-	updateWater();
-	jetpack.update(16);
-	smoke.update(16);
-	water.update(16);
+	updateWater(dt);
+	jetpack.update(dt);
+	smoke.update(dt);
+	water.update(dt);
 
 	
 	Tch.clearRect(0,0,WIDTH,HEIGHT);
@@ -858,7 +892,6 @@ var animFrame = function(t) {
 	C.globalCompositeOperation = "lighter";
 	jetpack.renderParticles(C);
 	C.restore()
-	water.renderParticles(C);
 	smoke.renderParticles(C);
 
 	if (red_man) {
@@ -866,10 +899,11 @@ var animFrame = function(t) {
 		draw_man(0, Player.pos, Player.angle);
 	}
 
+	water.renderParticles(C);
 	renderWater();
 	
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
-	water_y -= 0.01;
+	water_y -= 0.01*dt;
 	if (water_y<200) {
 		water_y = HEIGHT-10;
 	}
@@ -893,7 +927,7 @@ var animFrame = function(t) {
     frameCount++;
 	if (t - t0 > 10000) {
 		t0 = t;
-		console.log(frameCount-prevCount, Date());
+		console.log((frameCount-prevCount)/10, " avg FPS");
 		prevCount = frameCount;
 	}    
 };

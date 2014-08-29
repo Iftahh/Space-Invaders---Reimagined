@@ -56,12 +56,12 @@ Particle = function() {
 	    render: function(context) {
             var size = this.size;
 			var halfSize = size >> 1;
-			var x = ~~this.position.x;
-			var y = ~~this.position.y;
+			var x = this.position.x|0;
+			var y = this.position.y|0;
 					
 			var radgrad = context.createRadialGradient( x + halfSize, y + halfSize, this.sizeSmall, x + halfSize, y + halfSize, halfSize);  
 			radgrad.addColorStop( 0, this.drawColor );   
-			radgrad.addColorStop( 1, 'rgba(0,0,0,0)' );
+			radgrad.addColorStop( 1, 'transparent' );
 			context.fillStyle = radgrad;
 		  	context.fillRect( x, y, size, size );
 	    }
@@ -124,10 +124,18 @@ ParticlePointEmitter = function(maxParticles, options) {
 	        if (!this.finishSize) {
 	        	this.finishSize = this.size;
 	        }
-	        this.emissionRate = this.maxParticles / this.lifeSpan;
+	        if (!this.emissionRate) {
+	        	this.emissionRate = this.maxParticles / this.lifeSpan;
+	        }
 	    },
 		
-		addParticle: function(){
+//	    addParticles: function(n, x,y){
+//	    	range(n, function() {
+//	    		return !addParticle(x,y)
+//	    	})
+//	    },
+	    
+		addParticle: function(x,y){
 			if(this.particles.length == this.maxParticles) {
 				return null;
 			}
@@ -135,15 +143,15 @@ ParticlePointEmitter = function(maxParticles, options) {
 			// Take the next particle out of the particle pool we have created and initialize it
 			
 			var particle = this.graveyard.shift() || Particle();
-			this.initParticle( particle );
+			this.initParticle( particle,x,y);
 	        this.particles.push(particle);
 			return particle;
 		},
 		
-		initParticle: function( particle ){
+		initParticle: function( particle, x, y ){
 	
-			particle.position.x = this.position.x + this.positionRandom.x * rndab(-1,1);
-			particle.position.y = this.position.y + this.positionRandom.y * rndab(-1,1);
+			particle.position.x = x + this.positionRandom.x * rndab(-1,1);
+			particle.position.y = y + this.positionRandom.y * rndab(-1,1);
 	
 			var newAngle = (this.angle + this.angleRandom * rndab(-1,1) ) * ( PI / 180 ); // convert to radians
 			var vector = vector_create(Math.cos( newAngle ), sin( newAngle ));
@@ -151,7 +159,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 			particle.direction = vector_multiply( vector, vectorSpeed );
 	
 			particle.size = this.size + this.sizeRandom * rndab(-1,1);
-			particle.size = particle.size <= 1 ? 1 : ~~particle.size;
+			particle.size = particle.size <= 1 ? 1 : particle.size|0;
 			particle.finishSize = this.finishSize + this.sizeRandom * rndab(-1,1);
 			
 			particle.timeToLive = this.lifeSpan + this.lifeSpanRandom * rndab(-1,1);
@@ -159,7 +167,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 			particle.sharpness = this.sharpness + this.sharpnessRandom * rndab(-1,1);
 			particle.sharpness = particle.sharpness > 100 ? 100 : particle.sharpness < 0 ? 0 : particle.sharpness;
 			// internal circle gradient size - affects the sharpness of the radial gradient
-			particle.sizeSmall = ~~( ( particle.size / 200 ) * particle.sharpness ); //(size/2/100)
+			particle.sizeSmall = ( particle.size / 200 ) * particle.sharpness|0; //(size/2/100)
 	
 			var start = [
 				this.startColor[ 0 ] + this.startColorRandom[ 0 ] * rndab(-1,1),
@@ -192,12 +200,12 @@ ParticlePointEmitter = function(maxParticles, options) {
 		},
 		
 		update: function( delta ){
-	        delta = delta/1000;
+	        delta = delta/31;
 			if( this.active && this.emissionRate > 0 ){
 				var rate = 1 / this.emissionRate;
 				this.emitCounter += delta;
 				while( this.particles.length < this.maxParticles && this.emitCounter > rate ){
-					this.addParticle();
+					this.addParticle(this.position.x, this.position.y);
 					this.emitCounter -= rate;
 				}
 				this.elapsedTime += delta;
@@ -239,8 +247,14 @@ ParticlePointEmitter = function(maxParticles, options) {
 					currentParticle.position.add( currentParticle.direction );
 					currentParticle.timeToLive -= delta;
 					
+					// allow extenrnal update - set timeTolive to zero if particle should die
+					that.updateParticle(currentParticle);
+				}
+				
+				if( currentParticle.timeToLive > 0 ){
+					
 					currentParticle.size += currentParticle.deltaSize * delta;
-					currentParticle.sizeSmall = ~~( ( currentParticle.size / 200 ) * currentParticle.sharpness ); //(size/2/100)
+					currentParticle.sizeSmall =  ( currentParticle.size / 200 ) * currentParticle.sharpness |0; //(size/2/100)
 	
 //	                if (isNaN(currentParticle.color[ 2 ]) ) {
 //	                    console.log("Error");
@@ -258,14 +272,12 @@ ParticlePointEmitter = function(maxParticles, options) {
 //	                }
 					// Calculate the rgba string to draw.
 					var draw = [];
-					draw.push("rgba(" + minmax(0,255, ~~r) );
-					draw.push( minmax(0,255, ~~g));
-					draw.push( minmax(0,255, ~~b));
+					draw.push("rgba(" + minmax(0,255, r|0) );
+					draw.push( minmax(0,255, g|0));
+					draw.push( minmax(0,255, b|0));
 					draw.push( minmax(0,1, a.toFixed(2)) + ")");
 					currentParticle.drawColor = draw.join( "," );
 					
-					that.updateParticle(currentParticle);
-	
 				} else {
 					that.particles.splice(particleIndex,1);
 					that.graveyard.push(currentParticle);
