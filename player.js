@@ -7,8 +7,8 @@ man_canvas = r2c(96,48, function(ctx) {
 	  ctx.drawImage(manImage, 0, 0, 96,48);
 	  yellow_man = createCanvas(96,48);
 	  red_man = createCanvas(96,48);
-	  var rctx = red_man.getContext('2d');
-	  var bctx = yellow_man.getContext('2d');
+	  var rctx = Ctx(red_man);
+	  var bctx = Ctx(yellow_man);
 	  var pixels = ctx.getImageData(0,0,96,48).data;
 	  var redid = rctx.createImageData(96,48);
 	  var yellowid = bctx.createImageData(96,48);
@@ -34,18 +34,18 @@ man_canvas = r2c(96,48, function(ctx) {
 
 draw_man = function(color, v, angle) {
 	var man = color ? red_man: yellow_man;
-	C.save();
-	C.translate(v.x-24,v.y-48);
+	spritesCtx.save();
+	spritesCtx.translate(v.x-24,v.y-48);
 	if (Player.leftFace) {
-		C.translate(48,0);
-		C.scale(-1,1);
+		spritesCtx.translate(48,0);
+		spritesCtx.scale(-1,1);
 		angle = PI - angle;
 	}
-	C.drawImage(man, 0,0, 48,48, 0, 0, 48,48);
-	C.translate(16+5,16);
-	C.rotate(angle);
-	C.drawImage(man, 48,0, 48,48, -16, -16, 48,48);
-	C.restore();
+	spritesCtx.drawImage(man, 0,0, 48,48, 0, 0, 48,48);
+	spritesCtx.translate(16+5,16);
+	spritesCtx.rotate(angle);
+	spritesCtx.drawImage(man, 48,0, 48,48, -16, -16, 48,48);
+	spritesCtx.restore();
 //	C.fillStyle= "#f00";
 //	C.fillRect(v.x-1, v.y-1, 3,3)
 }

@@ -7,7 +7,8 @@ var LevelH = 2000;
 
 // fractal mountain based on http://www.gameprogrammer.com/fractal.html#ptII
 
-
+// Make level form the same every time to avoid bad levels
+RNG.setSeed(1)
 
 /*
  * fill1DFractArray - Tessalate an array of values into an
@@ -63,21 +64,22 @@ fill1DFractArray =function(heights, heightScale, h) {
 }
 
 
+cave_pattern = groundCtx.createPattern(cave_canvas, 'repeat');
 
+level_img = createCanvas(LevelW, LevelH)
+level_collision = createCanvas(LevelW, LevelH)
 
 level = r2c(LevelW, LevelH, function(ctx, canvas) {
-	ctx.fillStyle = "#fff";
 	ctx.lineWidth = 6;
-	ctx.fillRect(0,0,LevelW,LevelH);
 	ctx.strokeStyle = "#ddd";
 	ctx.textAlign = 'center';
-	ctx.font = "bold 30px Arial";
-	ctx.fillStyle = "#aaa";
+	ctx.font = "bold 80px Arial";
+	ctx.fillStyle = cave_pattern;
 
 	// text air wrapper
 	var T = "JS13KGAMES 2014";
 	ctx.miterLimit=2;
-	ctx.strokeText(T,200,50);
+	ctx.strokeText(T,LevelW/2, LevelH - 250);
 	
 	// mountain
 	ctx.beginPath();
@@ -93,7 +95,7 @@ level = r2c(LevelW, LevelH, function(ctx, canvas) {
 			console.log(x, heights[x])
 		}
 		ctx.lineTo(x, LevelH-(heights[x] +
-				(.4*LevelH *  sq(sin(2*TPI*x/LevelW)) *sq(sin(0.7+3*TPI*x/LevelW))))
+				(.4*LevelH *  sq(sin(2*TPI*x/LevelW)) *sq(sin(PI+3*TPI*x/LevelW))))
 		);
 //		ctx.lineTo(x, irndab(2,20)+
 //					  (LevelH-30)*	(.5+.4*sin(0.6+6*TPI*x/WIDTH))
@@ -108,13 +110,13 @@ level = r2c(LevelW, LevelH, function(ctx, canvas) {
 	
 	// text full inner
 	ctx.fillStyle = "#000";
-	ctx.fillText(T,200,50);
+	ctx.fillText(T,LevelW/2, LevelH - 250);
 	ctx.fillStyle = "#fff";
 	
 
 	ctx.fillStyle = "#ddd";
 	T = "ISLAND WAR";
-	ctx.fillText(T,200,86);
+	ctx.fillText(T,LevelW/2, LevelH - 150);
 	
 //		var pixels = ctx.getImageData(0,0,LevelW, LevelH).data;
 //		var i=0;

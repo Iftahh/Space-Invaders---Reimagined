@@ -1,17 +1,18 @@
 
 
-var painty = function(buffer, base_min, base_top, mndirx,mxdirx, mndiry, mxdiry, color_step, seed_chance) {
+var painty = function(buffer, width,height, base_min, base_top, mndirx,mxdirx, mndiry, mxdiry, color_step, seed_chance) {
 	var fu = function(x,y) {
-		var ei=y*WIDTH+x;
+		var ei=y*width+x;
 		try {
 			return buffer[ei] ?
 						buffer[ei] :
 						buffer[ei]= irnda(seed_chance) ? 
-									minmax(0, 255, (irnda(color_step)+fu((x-irndab(mndirx,mxdirx)) %WIDTH, 
-											(y-irndab(mndiry,mxdiry))%HEIGHT)))
+									minmax(0, 255, (irnda(color_step)+fu((width+x-irndab(mndirx,mxdirx)) %width, 
+											(height+y-irndab(mndiry,mxdiry))%height)))
 									: irndab(base_min,base_top);
 		}
 		catch(e) {
+			console.log(e)
 			return buffer[ei]= irndab(base_min,base_top);
 		}
 	}
@@ -49,7 +50,7 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 //taken from http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
 Filters = {
 	getPixels: function(c) {
-	  var ctx = c.getContext('2d');
+	  var ctx = Ctx(c);
 	  return ctx.getImageData(0,0,c.width,c.height);
 	},
 		
@@ -67,33 +68,28 @@ Filters = {
 	  return this.tmpCtx.createImageData(w,h);
 	},
 	
-	convolute: function(pixels, weights, wrap) {
+	convolute: function(pixels, weights) {
 		  var side = round(sqrt(weights.length));
 		  var halfSide = side/2|0;
 		  var src = pixels.data;
 		  var sw = pixels.width;
 		  var sh = pixels.height;
-		  // pad output by the convolution matrix
-		  var w = sw;
-		  var h = sh;
-		  var output = Filters.createImageData(w, h);
+		  var output = Filters.createImageData(sw, sh);
 		  var dst = output.data;
 		  // go through the destination image pixels
 		  //var alphaFac = opaque ? 1 : 0;
 		  var dstOff = 0;
-		  duRange(w,h, function(x,y) {
-		      var sy = y;
-		      var sx = x;
+		  duRange(sw,sh, function(x,y) {
 		      // calculate the weighed sum of the source image pixels that
 		      // fall under the convolution matrix
 		      var r=0, g=0, b=0;//, a=0;
 		      duRange(side, side, function(cx,cy) {
-		          var scy = sy + cy - halfSide;
-		          var scx = sx + cx - halfSide;
-		          scy += HEIGHT*10;
-		          scy %= HEIGHT;
-		          scx += WIDTH*10;
-		          scx %= WIDTH;
+		          var scy = y + cy - halfSide;
+		          var scx = x + cx - halfSide;
+		          scy += sh*10;
+		          scy %= sh;
+		          scx += sw*10;
+		          scx %= sw;
 		          //if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
 		            var srcOff = (scy*sw+scx)*4;
 		            var wt = weights[cy*side+cx];

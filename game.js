@@ -11,46 +11,9 @@ var OffsetX = OffsetY = 0; //  is the integer round of fcur - needed to be int i
 
 
 
-if (false) {
+	
 
 
-	
-	//
-	ice_canvas = r2c(WIDTH, HEIGHT, function(ctx, canvas) {
-		var imgData=ctx.createImageData(WIDTH,HEIGHT);
-	    var d = imgData.data;
-	    var red = painty([], 60,110, 1,3, 1,3, -4, 100);
-	    var green = painty([], 80,160, 1,3, 1,3, -2, 500);
-	    var blue = painty([], 20, 40, 1,3, 1,3, 3, 1000);
-	    var i=0; // pixel index
-	    duRange(WIDTH, HEIGHT, function(x,y) {
-	    	d[i++] = red(x,y);
-    		d[i++] = green(x,y);
-    		d[i++] = blue(x,y);    		
-    		d[i++] = U8;
-	    });
-	    ctx.putImageData(imgData,0,0);
-	})
-	
-	
-	
-	grass_canvas = r2c(WIDTH, HEIGHT, function(ctx, canvas) {
-		var imgData=ctx.createImageData(WIDTH,HEIGHT);
-	    var d = imgData.data;
-	    var red = painty([], 60,150, -3,-1, 1,3, -2, 100);
-	    var green = painty([], 40,90, -3,-1, 1,3, 3, 200);
-	    var blue = painty([], 70, 120, -3,-1, 1,3, -3, 100);
-	    var i=0; // pixel index
-	    duRange(WIDTH,HEIGHT, function(x,y) {
-	    	d[i++] = red(x,y)
-    		d[i++] = green(x,y);
-    		d[i++] = blue(x,y);    		
-    		d[i++] = U8;
-	    })
-	    ctx.putImageData(imgData,0,0);
-	})
-
-}
 
 //rdp = [148, 1000, 500, 400];
 //grp = [610, 60, 864, 860];
@@ -83,7 +46,7 @@ if (false) {
 //
 MOUSE_POS = {x:0, y:0}
 rect = canvases[1].getBoundingClientRect();
-canvases[2].addEventListener('mousemove', function(evt) {
+canvases[canvases.length-1].addEventListener('mousemove', function(evt) {
 	MOUSE_POS = {
       x: evt.clientX - rect.left,
       y: evt.clientY - rect.top
@@ -91,56 +54,16 @@ canvases[2].addEventListener('mousemove', function(evt) {
 }, false);
 
 
-// two background buffers - for animation
-//buffers = [];
-//for (var i=0; i<10; i++) {
-//	buffers[i] = BgC.createImageData(WIDTH,HEIGHT);
-//}
-
-
-
-if (false) {
 	
-	var filtered = Filters.filterCanvas(Filters.convolute, ice_canvas,
-			  [   .1,  .1,  .1,
-			      .1, .2, .1,
-			     .1, .1, .1 ]
-			);
-
-	// blur the ice canvas
-	ice_canvas.width = filtered.width;
-	ice_canvas.height = filtered.height;
-	var ctx = ice_canvas.getContext('2d');
-	ctx.putImageData(filtered, 0, 0);
-	
-	//test.draw(0,0, width, height);
-
-	initLevel();
-}	
-
-// copy background to water pixels
-
-
-
-//var bgPixels = VoronoiDemo.canvas.getContext('2d').getImageData(0,0,WIDTH,HEIGHT).data;
-//var i=0;
-//for (var y=0; y<HEIGHT; y++) {
-//	for (var x=0; x<WIDTH; x++) {
-//		for (var j=0; j<4; j++) {
-//			waterPixels[i] = waterPixels[i]*.85 + bgPixels[i] * 0.15;
-//			i++;
-//		}
-//	}
-//}
 
 frameCount = 0;
 
 var prevCount = frameCount;
 var t0 = -1;
-BgC.fillStyle = sky_pattern;
-BgC.fillRect(0,0,WIDTH,HEIGHT);
+skyCtx.fillStyle = sky_pattern;
+skyCtx.fillRect(0,0,WIDTH,HEIGHT);
 var prevFrameInd;
-Tch.globalAlpha = 0.9;
+waterCtx.globalAlpha = 0.9;
 
 WIND = function() {return wind; }
 
@@ -152,7 +75,7 @@ windForce=  function(wind, speed, area) {
 
 WATER_FRAMES = 2// 20
 range(WATER_FRAMES, function(i) {
-	water_frames[i] = C.createPattern(water_canvas(i * TPI/WATER_FRAMES), 'no-repeat');
+	water_frames[i] = waterCtx.createPattern(water_canvas(i * TPI/WATER_FRAMES), 'no-repeat');
 })
 
 Player = {
@@ -261,9 +184,8 @@ water = ParticlePointEmitter(250, {
 //	return springs[x/WATER_SPRING_DX | 0].height * m + (1-m)* springs[1+(x/WATER_SPRING_DX | 0)].height;
 //}
 
-C=BgC;
-level.draw(0,0,LevelW, LevelH)
-C=FdC;
+
+drawImg(groundCtx, level, 0,0)
 
 var prev_t = 0;
 
@@ -273,7 +195,7 @@ var animFrame = function(t) {
 	var frameInd = (frameCount/6 |0) % WATER_FRAMES;
 
 	if (prevFrameInd != frameInd) {
-		Tch.fillStyle = water_frames[frameInd];
+		waterCtx.fillStyle = water_frames[frameInd];
 		prevFrameInd = frameInd;
 	}
 
@@ -335,21 +257,21 @@ var animFrame = function(t) {
 	water.update(dt);
 
 	
-	Tch.clearRect(0,0,WIDTH,HEIGHT);
-	C.clearRect(0,0,WIDTH,HEIGHT);
+	waterCtx.clearRect(0,0,WIDTH,HEIGHT);
+	spritesCtx.clearRect(0,0,WIDTH,HEIGHT);
 
-	C.save()
-	C.globalCompositeOperation = "lighter";
-	jetpack.renderParticles(C);
-	C.restore()
-	smoke.renderParticles(C);
+	spritesCtx.save()
+	spritesCtx.globalCompositeOperation = "lighter";
+	jetpack.renderParticles(spritesCtx);
+	spritesCtx.restore()
+	smoke.renderParticles(spritesCtx);
 
 	if (red_man) {
 		Player.angle = Math.atan2(MOUSE_POS.y - Player.pos.y, MOUSE_POS.x - Player.pos.x);
 		draw_man(0, Player.pos, Player.angle);
 	}
 
-	water.renderParticles(C);
+	water.renderParticles(waterCtx);
 	renderWater();
 	
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
@@ -374,8 +296,9 @@ var animFrame = function(t) {
 	if (dx || dy) {
 		OffsetX += dx;
 		OffsetY += dy;
-		BgC.translate(-dx, -dy);
-		BgC.drawImage(level, 0,0,LevelW,LevelH)
+		groundCtx.translate(-dx, -dy);
+		groundCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
+		drawImg(groundCtx, level, 0,0)
 	}
 	
     RQ(animFrame);

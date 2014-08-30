@@ -26,4 +26,4 @@ sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
     ctx.putImageData(imgData,0,0);
 })
 
-var sky_pattern = C.createPattern(sky_canvas, 'repeat-x');
+var sky_pattern = skyCtx.createPattern(sky_canvas, 'repeat-x');

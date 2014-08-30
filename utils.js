@@ -1,6 +1,44 @@
 
 DC = document;
 
+RNG = {
+	setSeed: function(seed) {
+	    seed = (seed < 1 ? 1/seed : seed);
+	
+	    this._seed = seed;
+	    this._s0 = (seed >>> 0) * this._frac;
+	
+	    seed = (seed*69069 + 1) >>> 0;
+	    this._s1 = seed * this._frac;
+	
+	    seed = (seed*69069 + 1) >>> 0;
+	    this._s2 = seed * this._frac;
+	
+	    this._c = 1;
+	    return this;
+	},
+		
+    _s0: 0,
+    _s1: 0,
+    _s2: 0,
+    _c: 0,
+    _frac: 2.3283064365386963e-10 /* 2^-32 */
+}
+
+/**
+ * @returns {float} Pseudorandom value [0,1), uniformly distributed
+ */
+rnd= function() {
+    var t = 2091639 * RNG._s0 + RNG._c * RNG._frac;
+    RNG._s0 = RNG._s1;
+    RNG._s1 = RNG._s2;
+    RNG._c = t | 0;
+    RNG._s2 = t - RNG._c;
+    return RNG._s2;
+}
+
+
+RNG.setSeed(5)
 
 range = function(maxInt,iterFu) {
     for (var i=0; i<maxInt; i++)
@@ -47,26 +85,27 @@ canvases = [];
 contexts = [];
 
 
+Ctx = function(canvas) {
+	return canvas.getContext('2d')
+}
+
 var cont =  DC.getElementById('canvas_cont');
-range(3, function(i) { 
+range(4, function(i) { 
    var canvas = createCanvas();
    cont.appendChild(canvas);
    canvases.push(canvas);
-   contexts.push(canvas.getContext("2d"))
+   contexts.push(Ctx(canvas))
 });
 
-// Forward (front) Context
-FdC = contexts[1]
-C = FdC; // current canvas to draw to - may toggle around for double buffering
+ // current canvas to draw to - may toggle around for double buffering
 
-// Background context
-BgC = contexts[0]
-
-// Top context (overlay)
-Tch = contexts[2]
+skyCtx = contexts[0]
+groundCtx = contexts[1]
+spritesCtx = contexts[2]
+waterCtx = contexts[3]
+// Overlay context (overlay)
 
 
-rnd = Math.random;
 abs = Math.abs;
 min = Math.min;
 max = Math.max;
@@ -108,7 +147,11 @@ if (!RQ) {
 //and return it with added draw(x,y,w,h) method that draws the canvas to the main one
 var r2c=function (width, height, renderFunction) {
  var canvas = createCanvas(width, height)
- renderFunction(canvas.getContext('2d'), canvas);
- canvas.draw = function(x,y,w,h) { C.drawImage(this, x,y,w,h) }
+ renderFunction(Ctx(canvas), canvas);
  return canvas;
 }
+
+drawImg = function(ctx, img, x,y) {
+	ctx.drawImage(img, x,y, img.width, img.height);
+}
+

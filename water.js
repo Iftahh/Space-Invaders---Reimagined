@@ -40,20 +40,20 @@ function updateWater(dt) {
 
 function renderWater() {
 
-	Tch.beginPath();
-	Tch.moveTo(WIDTH, HEIGHT);
-	Tch.lineTo(0, HEIGHT);
+	waterCtx.beginPath();
+	waterCtx.moveTo(WIDTH, HEIGHT);
+	waterCtx.lineTo(0, HEIGHT);
 	var x=0;
 	each(springs, function($) {
-		Tch.lineTo(x, $.height + 3*sin(TPI*((x-3.5*frameCount*wind)/322) 
+		waterCtx.lineTo(x, $.height + 3*sin(TPI*((x-3.5*frameCount*wind)/322) 
 							   + 4*sin(TPI*((x-2*frameCount*wind)/511))
 							   + 4*sin(TPI*((x-frameCount*wind)/733))
 				
 				))
 		x+= WATER_SPRING_DX;
 	})
-	Tch.closePath();
-	Tch.fill();
+	waterCtx.closePath();
+	waterCtx.fill();
 }
 
 
