@@ -88,7 +88,7 @@ jetpack = ParticlePointEmitter(250, {
 	angle: 90,
 	angleRandom: 10,
 	duration: -1,
-	finishColor: [255, 45, 10, 0],
+	finishColor: [200, 45, 10, 0],
 	finishColorRandom: [40,40,40,0],
 	gravity: vector_create(0,.03),
 	lifeSpan: 1,
@@ -98,6 +98,7 @@ jetpack = ParticlePointEmitter(250, {
 	sharpnessRandom: 12,
 	size: 20,
 	finishSize: 50,
+	colorEdge: 'rgba(40,20,10,0)',
 	sizeRandom: 4,
 	speed: 4,
 	speedRandom: 1,
@@ -139,6 +140,7 @@ smoke = ParticlePointEmitter(250, {
 	size: 30,
 	finishSize: 40,
 	sizeRandom: 4,
+	colorEdge: 'transparent',
 	speed: 1,
 	speedRandom: 0,
 	startColor: [220, 220, 220, 1],
@@ -194,11 +196,6 @@ var animFrame = function(t) {
 	prev_t = t;
 	var frameInd = (frameCount/6 |0) % WATER_FRAMES;
 
-	if (prevFrameInd != frameInd) {
-		waterCtx.fillStyle = water_frames[frameInd];
-		prevFrameInd = frameInd;
-	}
-
 
 	var speed = KEYS[SPACE] ? 1.65 : 0.6;
 	if (KEYS[LEFT]) {
@@ -223,7 +220,7 @@ var animFrame = function(t) {
 	var above = Player.pos.y < water_y;
 	Player.v.scale(above? .99 : 0.76) // air or water friction
 	// gravity or jetpack
-	//Player.v.y = minmax(-12,22, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
+	Player.v.y = minmax(-12,22, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
 	if (Player.pos.y > water_y) {
@@ -258,6 +255,7 @@ var animFrame = function(t) {
 
 	
 	waterCtx.clearRect(0,0,WIDTH,HEIGHT);
+
 	spritesCtx.clearRect(0,0,WIDTH,HEIGHT);
 
 	spritesCtx.save()
@@ -271,7 +269,13 @@ var animFrame = function(t) {
 		draw_man(0, Player.pos, Player.angle);
 	}
 
+	waterCtx.save()
 	water.renderParticles(waterCtx);
+	waterCtx.restore()
+	if (prevFrameInd != frameInd) {
+		waterCtx.fillStyle = water_frames[frameInd];
+		prevFrameInd = frameInd;
+	}
 	renderWater();
 	
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);

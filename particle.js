@@ -58,10 +58,9 @@ Particle = function() {
 			var halfSize = size >> 1;
 			var x = this.position.x|0;
 			var y = this.position.y|0;
-					
 			var radgrad = context.createRadialGradient( x + halfSize, y + halfSize, this.sizeSmall, x + halfSize, y + halfSize, halfSize);  
 			radgrad.addColorStop( 0, this.drawColor );   
-			radgrad.addColorStop( 1, 'transparent' );
+			radgrad.addColorStop( 1, this.drawColorEdge );
 			context.fillStyle = radgrad;
 		  	context.fillRect( x, y, size, size );
 	    }
@@ -73,23 +72,32 @@ Particle = function() {
 
 ParticlePointEmitter = function(maxParticles, options) {
 	res = {
+			// options will override these defaults, no need to set them
 //	    particles: null,
 //	    maxParticles: null,
-	    // Default Properties
-//	    size: 30,
+	    
+	// Default Properties
+		
+//	    size: 30,          // initial size of particle
 //	    sizeRandom: 12,
-//	    speed: 6,
+			
+//	    speed: 6,         // initial speed of particle
 //	    speedRandom: 2,
-//	    angle: 0,
+			
+//	    angle: 0,        // initial direction of particle (degrees)
 //	    angleRandom: 180,
-//	    lifeSpan: 8,
+			
+//	    lifeSpan: 8,     // lifetime of particle + used as indication of frequently to emit particles
 //	    lifeSpanRandom: 6,
-//	    startColor: [ 220, 208, 88, 1 ],
+			
+//	    startColor: [ 220, 208, 88, 1 ],          // color at begining of lifetime
 //	    startColorRandom: [ 52, 55, 58, 0 ],
-//	    finishColor: [ 255, 45, 10, 0 ],
+//	    finishColor: [ 255, 45, 10, 0 ],		  // color at end of lifetime
 //	    finishColorRandom: [ 40, 40, 40, 0 ],
-//	    sharpness: 35,
+		colorEdge: 0,						  // color at edge of particle "ball" - must be zero alpha,  false for same as color
+//	    sharpness: 35,							  // how sharp (percent) will the particle "ball" be (0 - very fuzzy)
 //	    sharpnessRandom: 12,
+			
 	    forcePoints: [], // pairs of weight and location.  positive weight attracts, negative weight pushes
 	    wind: null, // function returning value of wind - can change over time
 	    area: 0.3, // used to calculate wind affect
@@ -271,12 +279,12 @@ ParticlePointEmitter = function(maxParticles, options) {
 //	                    console.log("Error");
 //	                }
 					// Calculate the rgba string to draw.
-					var draw = [];
-					draw.push("rgba(" + minmax(0,255, r|0) );
-					draw.push( minmax(0,255, g|0));
-					draw.push( minmax(0,255, b|0));
-					draw.push( minmax(0,1, a.toFixed(2)) + ")");
-					currentParticle.drawColor = draw.join( "," );
+					var draw = [ "rgba(" + minmax(0,255, r|0),
+								  minmax(0,255, g|0),
+								  minmax(0,255, b|0)].join(',');
+					
+					currentParticle.drawColorEdge = that.colorEdge || (draw + ",0)")
+					currentParticle.drawColor = draw + ','+minmax(0,1, a.toFixed(2)) + ")";
 					
 				} else {
 					that.particles.splice(particleIndex,1);
