@@ -155,3 +155,10 @@ drawImg = function(ctx, img, x,y) {
 	ctx.drawImage(img, x,y, img.width, img.height);
 }
 
+
+
+initQueue = []
+initFu = function(text, pg, fu, dl) {
+	initQueue.push([text,pg,fu, dl])
+}
+

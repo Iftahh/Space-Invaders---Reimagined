@@ -1,11 +1,10 @@
 
 
-// build level map
-var LevelW = 4096;
-var LevelH = 2000;
-
 
 // fractal mountain based on http://www.gameprogrammer.com/fractal.html#ptII
+
+initFu("Chiseling Mountains", 10, function() {
+	
 
 // Make level form the same every time to avoid bad levels
 RNG.setSeed(1)
@@ -64,10 +63,9 @@ fill1DFractArray =function(heights, heightScale, h) {
 }
 
 
-cave_pattern = groundCtx.createPattern(cave_canvas, 'repeat');
 
 level_img = createCanvas(LevelW, LevelH)
-level_collision = createCanvas(LevelW, LevelH)
+//level_collision = createCanvas(LevelW, LevelH)
 
 level = r2c(LevelW, LevelH, function(ctx, canvas) {
 	ctx.lineWidth = 6;
@@ -145,4 +143,7 @@ level = r2c(LevelW, LevelH, function(ctx, canvas) {
 //				i += 4;
 //			}
 //		}
+	drawImg(groundCtx, canvas, 0,0)
+
 });
+})

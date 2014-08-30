@@ -1,49 +1,6 @@
 
 
-//var fcurCameraX, fcurCameraY; //  fcur-camera defines what is being viewed - needed to be float in order not to lock
 
-var OffsetX = OffsetY = 0; //  is the integer round of fcur - needed to be int in order to avoid fuzzy drawimage for images
-
-//var trns = function(hscale,hskew,vskew,vscale,x,y) { C.setTransform(hscale,hskew,vskew,vscale,x-OffsetX,y-OffsetY) }  //
-
-
-
-
-
-
-	
-
-
-
-//rdp = [148, 1000, 500, 400];
-//grp = [610, 60, 864, 860];
-//blp = [180, 100, 503, 103];
-//
-//wavy = function(x,y,p, yp1, yp2){
-//    return 63*(((sqrt(sq(p[0]-x)+yp1)+1)/((abs(sin((sqrt(sq(p[2]-x)+yp2))/115)))+1)/200)|0);
-//}
-
-//
-//wavy_canvas = r2c(WIDTH, HEIGHT, function(ctx, canvas) {
-//	var imgData=ctx.createImageData(WIDTH,HEIGHT);
-//    var d = imgData.data;
-//    var i=0; // pixel index
-//    for (var y=0;y<HEIGHT;y++) {
-//    	for (var x=0; x<WIDTH; x++) {
-//    		d[i++] = wavy(x,y, rdp);
-//    		d[i++] = wavy(x,y, grp);
-//    		d[i++] = wavy(x,y, blp);
-//   		
-//    		d[i++] = U8;
-//    	}
-//    }
-//    ctx.putImageData(imgData,0,0);
-//})
-
-
-
-
-//
 MOUSE_POS = {x:0, y:0}
 rect = canvases[1].getBoundingClientRect();
 canvases[canvases.length-1].addEventListener('mousemove', function(evt) {
@@ -53,15 +10,13 @@ canvases[canvases.length-1].addEventListener('mousemove', function(evt) {
     };
 }, false);
 
-
 	
 
 frameCount = 0;
 
 var prevCount = frameCount;
 var t0 = -1;
-skyCtx.fillStyle = sky_pattern;
-skyCtx.fillRect(0,0,WIDTH,HEIGHT);
+
 var prevFrameInd;
 waterCtx.globalAlpha = 0.9;
 
@@ -73,10 +28,6 @@ windForce=  function(wind, speed, area) {
 	return minmax(-10,10, abs(dv)*dv*area);
 }
 
-WATER_FRAMES = 2// 20
-range(WATER_FRAMES, function(i) {
-	water_frames[i] = waterCtx.createPattern(water_canvas(i * TPI/WATER_FRAMES), 'no-repeat');
-})
 
 Player = {
 	pos: vector_create(WIDTH/2, HEIGHT/2),
@@ -186,8 +137,6 @@ water = ParticlePointEmitter(250, {
 //	return springs[x/WATER_SPRING_DX | 0].height * m + (1-m)* springs[1+(x/WATER_SPRING_DX | 0)].height;
 //}
 
-
-drawImg(groundCtx, level, 0,0)
 
 var prev_t = 0;
 
@@ -317,4 +266,25 @@ var animFrame = function(t) {
 	}    
 };
 
-RQ(animFrame);
+initFu("Ready!", 10, function() {
+	DC.getElementById('overlay').style.display = "none"; // TODO: add class for fade transition
+	RQ(animFrame);
+})
+
+progress = 0;
+var initialize = function() {
+	if (initQueue.length == 0)
+		return;
+	var todo = initQueue.shift();
+	var text = todo[0];
+	var pg = todo[1];
+	DC.getElementById("text").textContent= text;
+	progress+=pg;
+	console.log("Progress: "+progress+"  text: "+text+"  "+Date())
+	if (DBG && progress > 100) alert("prgs at "+progress+" text is "+text);
+	DC.getElementById('pbar-in').style.width = (progress*2)+'px'
+
+	todo[2]();
+	setTimeout(initialize, todo[3] || 0);
+}
+initialize();

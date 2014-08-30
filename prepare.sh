@@ -28,3 +28,4 @@ zip js13.zip js13.js index.html man.gif
 mv js13.zip ..
 cp js13.js ..
 cd ..
+google-chrome 127.0.0.1:8080/prepared_index.html

@@ -47,6 +47,33 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 
 
 
+
+//rdp = [148, 1000, 500, 400];
+//grp = [610, 60, 864, 860];
+//blp = [180, 100, 503, 103];
+//
+//wavy = function(x,y,p, yp1, yp2){
+//  return 63*(((sqrt(sq(p[0]-x)+yp1)+1)/((abs(sin((sqrt(sq(p[2]-x)+yp2))/115)))+1)/200)|0);
+//}
+
+//
+//wavy_canvas = r2c(WIDTH, HEIGHT, function(ctx, canvas) {
+//	var imgData=ctx.createImageData(WIDTH,HEIGHT);
+//  var d = imgData.data;
+//  var i=0; // pixel index
+//  for (var y=0;y<HEIGHT;y++) {
+//  	for (var x=0; x<WIDTH; x++) {
+//  		d[i++] = wavy(x,y, rdp);
+//  		d[i++] = wavy(x,y, grp);
+//  		d[i++] = wavy(x,y, blp);
+// 		
+//  		d[i++] = U8;
+//  	}
+//  }
+//  ctx.putImageData(imgData,0,0);
+//})
+
+
 //taken from http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
 Filters = {
 	getPixels: function(c) {

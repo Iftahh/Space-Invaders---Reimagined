@@ -12,14 +12,60 @@ body {
 
 #canvas_cont canvas {
 	position: absolute;
+	margin: 0 auto;
 	-webkit-user-select: none;
 	width:1024px;
 	height:768px;
 }
+.err {
+	text-decoration: line-through;
+	color: #dde;
+}
+#overlay {
+	background: rgba(0,0,0,.4);
+	position: absolute;
+	top: 200px;
+	color: #eef;
+	width: 984px;
+	text-align: center;
+	padding: 20px;
+	font-family: arial, sans-serif;
+}
+h2 { 	
+	text-shadow: 2px 2px 5px #66a;
+}
+h2 > em {
+	text-shadow: 1px 1px 8px #88a;
+}
+#pbar {
+	border: 1px inset #337;
+	height: 12px;
+	margin: 0 auto;
+	width: 204px;
+}
+#pbar-in {
+	border: 2px outset #448;
+	height: 10px;
+	margin: -1px -1px;
+	background-color: #77b;
+	width: 1px;
+}
 
 </style>
 </head>
-<body id="canvas_cont">
+<body>
+	<div id="canvas_cont">
+		
+	</div>
+	<div id="overlay">
+		<h2><span>Please wait while <span class="err">Loading</span> <em>Generating</em></span></h2>
+		<h4  id="text">Reading script</h4>
+		<div id="pbar">
+			<div id="pbar-in"></div>
+		</div>
+	</div>
+	
+
 	<script type="text/javascript" src="js13.js"></script>
 </body>
 </html>

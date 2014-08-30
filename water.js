@@ -56,42 +56,43 @@ function renderWater() {
 	waterCtx.fill();
 }
 
+initFu("Raining water", 3, function() {
 
-var waterPixels=[];
-var red = painty([], 60,110, -2,2, 1,4, -4, 100);
-var green = painty([], 80,160, -2,2, 1,4, -2, 500);
-var blue = painty([], 20, 40, -2,2, 1,4, 3, 1000);
-var i=0; // pixel index
-for (var y=0;y<HEIGHT;y++) {
-	var prevR = irndab(5,25);
-	var prevG = irndab(10,35);
-	var prevB = irndab(20,40);
-	for (var x=0; x<WIDTH; x++) {
-		var curR = irndab(25,50);
-		var curG = irndab(30,65);
-		var curB = irndab(70,120);
-
-		waterPixels[i++] = 20+(curR+prevR >>1) + round(sin(y*TPI/10)*5); //red(x,y)
-		waterPixels[i++] = 25+(curG+prevG >>1) +round(sin(y*TPI/12)*5);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
-		waterPixels[i++] = 30+(curB+prevB >>1) +round(sin(y*TPI/13)*8);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
-		waterPixels[i++] = U8;
-		
-		prevR = curR;
-		prevG = curG;
-		prevB = curB;
+	waterPixels=[];
+	//var red = painty([], 60,110, -2,2, 1,4, -4, 100);
+	//var green = painty([], 80,160, -2,2, 1,4, -2, 500);
+	//var blue = painty([], 20, 40, -2,2, 1,4, 3, 1000);
+	var i=0; // pixel index
+	for (var y=0;y<HEIGHT;y++) {
+		var prevR = irndab(5,25);
+		var prevG = irndab(10,35);
+		var prevB = irndab(20,40);
+		for (var x=0; x<WIDTH; x++) {
+			var curR = irndab(25,50);
+			var curG = irndab(30,65);
+			var curB = irndab(70,120);
+	
+			waterPixels[i++] = 20+(curR+prevR >>1) + round(sin(y*TPI/10)*5); //red(x,y)
+			waterPixels[i++] = 25+(curG+prevG >>1) +round(sin(y*TPI/12)*5);//+((x/20)&7)*10 + ((y/20)&7)*10;//green(x,y);
+			waterPixels[i++] = 30+(curB+prevB >>1) +round(sin(y*TPI/13)*8);//+((x/30)&15)*10 + ((y/30)&15)*10;//blue(x,y);    		
+			waterPixels[i++] = U8;
+			
+			prevR = curR;
+			prevG = curG;
+			prevB = curB;
+		}
 	}
-}
-
-
-
-
-//blur the water
-var res = Filters.convolute({data:waterPixels, width:WIDTH, height:HEIGHT},
-		  [   .1, .1, .1,
-		      .1, .2, .1,
-		      .1, .1, .1 ], true
-		);
-waterPixels = res.data;
+	
+	
+	
+	//blur the water
+	var res = Filters.convolute({data:waterPixels, width:WIDTH, height:HEIGHT},
+			  [   .1, .1, .1,
+			      .1, .2, .1,
+			      .1, .1, .1 ], true
+			);
+	waterPixels = res.data;
+}, 1200)
 
 water_canvas = function(P) {
 	return r2c(WIDTH, HEIGHT, function(ctx, canvas) {
@@ -143,6 +144,17 @@ water_canvas = function(P) {
 }
 
 water_frames = [];
+
+WATER_FRAMES = 10
+range(WATER_FRAMES, function(i) {
+	initFu("Waving waves", 3, (function(_i) {
+			return function() {
+				water_frames[_i] = waterCtx.createPattern(water_canvas(_i * TPI/WATER_FRAMES), 'no-repeat');
+			}
+		})(i)
+	)
+})
+initFu("Waving waves", 0, function() {waterPixels = null;}) // clean memory
 
 
 //based on water tutorial 

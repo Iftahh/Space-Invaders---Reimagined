@@ -1,5 +1,5 @@
 
-var sky_width = 250;
+initFu("Painting Sky", 5, function() {
 
 // TODO: imgData pattern helpers
 sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
@@ -26,4 +26,7 @@ sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
     ctx.putImageData(imgData,0,0);
 })
 
-var sky_pattern = skyCtx.createPattern(sky_canvas, 'repeat-x');
+skyCtx.fillStyle = skyCtx.createPattern(sky_canvas, 'repeat-x');;
+skyCtx.fillRect(0,0,WIDTH,HEIGHT);
+
+}, 1000)

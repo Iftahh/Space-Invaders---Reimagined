@@ -1,4 +1,5 @@
 
+
 yellow_man = red_man = 0;
 
 man_canvas = r2c(96,48, function(ctx) {
