@@ -15,7 +15,7 @@ WATER_FRAMES = 2//10          // number of frames in water animation - more for 
 var levelWidth = 2048; // must be power of 2 for fractal mountain
 var levelHeight = 1000;
 
-CELL_SIZE = 4; // may want to lower for low resolution screen
+CELL_SIZE = 5; // may want to lower for low resolution screen
 
 /*************************************
  * These are not constants - their values may change in game

@@ -250,12 +250,12 @@ var animFrame = function(t) {
 	if (dx || dy) {
 		OffsetX += dx;
 		OffsetY += dy;
-//		groundCtx.translate(-dx, -dy);
-//		groundCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
-//		drawImg(groundCtx, level, 0,0)
-		groundCtx.clearRect(0,0,WIDTH,HEIGHT)
+//		mountainCtx.translate(-dx, -dy);
+//		mountainCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
+//		drawImg(mountainCtx, level, 0,0)
+		mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
 		drawToBackBuff(OffsetX, OffsetY, 0,0, BB_WIDTH,BB_HEIGHT);
-		drawImg(groundCtx, groundBackBuffs[curBackBuffInd], 0,0)
+		drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 
 	}
 	

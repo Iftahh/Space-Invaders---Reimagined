@@ -88,16 +88,17 @@ initFu("Raining water", 3, function() {
 	
 	
 	//blur the water
-	var res = Filters.convolute({data:waterPixels, width:WIDTH, height:HEIGHT},
+	var res = []
+	_convulate({data:waterPixels, width:WIDTH, height:HEIGHT}, res,
 			  [   .1, .1, .1,
 			      .1, .2, .1,
-			      .1, .1, .1 ], true
+			      .1, .1, .1 ]
 			);
-	waterPixels = res.data;
+	waterPixels = res;
 }, 1200)
 
 water_canvas = function(P) {
-	return r2c(WIDTH, HEIGHT, function(ctx, canvas) {
+	return render2pixels(WIDTH, HEIGHT, function(d) {
 	    
 	    var displace_x = [];
 	    var displace_y = [];
@@ -114,8 +115,6 @@ water_canvas = function(P) {
 			//displace_y[i] = 0;
 			i++;
 	    })
-		var imgData=ctx.createImageData(WIDTH,HEIGHT);
-	    var d = imgData.data;
 	    
 	    displace(displace_x, displace_y, waterPixels, d, WIDTH, HEIGHT);
 	    
@@ -141,7 +140,6 @@ water_canvas = function(P) {
 //		  		d[i++] = U8;
 //		  	}
 //		  }
-		  ctx.putImageData(imgData,0,0);
 		})
 }
 

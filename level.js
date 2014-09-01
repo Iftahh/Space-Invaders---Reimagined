@@ -26,7 +26,7 @@ fill1DFractArray =function(heights, heightScale, h) {
 	 * Called by fill1DFractArray.
 	 */
 	var avgEndpoints = function(i, stride) {
-	    return (heights[i-stride] + heights[i+stride]) /2;
+	    return avg(heights[i-stride], heights[i+stride]);
 	}
     /* subSize is the dimension of the array in terms of connected line
        segments, while size is the dimension in terms of number of
@@ -88,9 +88,9 @@ level = r2c(levelWidth, levelHeight, function(ctx, canvas) {
 		
 	
 	ctx.shadowColor = VEGETATION;
-	ctx.shadowBlur = 1;
+	ctx.shadowBlur = 0;
 	ctx.shadowOffsetX = 0;
-	ctx.shadowOffsetY = -7;
+	ctx.shadowOffsetY = -8;
 	ctx.fillStyle = GROUND;
     
 //	ctx.textAlign = 'center';
@@ -154,7 +154,7 @@ level = r2c(levelWidth, levelHeight, function(ctx, canvas) {
 //	T = "ISLAND WAR";
 //	ctx.fillText(T,levelWidth/2, levelHeight - 150);
 	
-//	drawImg(groundCtx, canvas, 0,0)
+//	drawImg(mountainCtx, canvas, 0,0)
 
 	levelPixels = ctx.getImageData(0,0,levelWidth, levelHeight).data;
 });
@@ -205,7 +205,16 @@ range(2, function() {
 
 curBackBuffInd = 0;
 
-
+var _noise = [], NoiseLen=80;
+range(NoiseLen,function() {
+	_noise.push(irndab(-2,3));  // should be at most CELL_SIZE/2
+})
+noiseX = function(x,y) {
+	return _noise[(x*11+y*3)%NoiseLen]
+}
+noiseY = function(x,y) {
+	return _noise[(x*9+y*7)%NoiseLen]
+}
 
 /*************************************************
  * drawToBackBuff
@@ -235,23 +244,35 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 		var pix = (ly*levelWidth+lvlX)*4, // 4 bytes per pixel
 			prevType = colorToType(levelPixels[pix]),
 			leftX=0; // beginning of rectangle
-		for (var lx=0; lx<cellsPerRow; lx++) {
+		range(cellsPerRow, function(lx){
 			// find horizontal strips- make rectangles of them
 			var curType = colorToType(levelPixels[pix]);
 			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
 				console.log(curType+" pixel at pix "+pix +"  y="+ly+" x="+(lx+lvlX));
 			}
-			if ((curType != prevType) || lx==cellsPerRow-1) {
+			if ((curType != prevType) || lx>=cellsPerRow-1) {
 				if (prevType) {
 					ctx.fillStyle = prevType;
-					ctx.fillRect(x0+leftX*CELL_SIZE, cy, (lx-leftX)*CELL_SIZE, CELL_SIZE);
+//					ctx.fillRect(x0+leftX*CELL_SIZE, cy, (lx-leftX)*CELL_SIZE, CELL_SIZE);
 					//console.log("Filling rect at "+(x+leftX*CELL_SIZE)+','+ cy+ ' w:'+((lx-leftX)*CELL_SIZE+ '  color: '+curType));
+					ctx.beginPath()
+					ctx.moveTo(x0+leftX*CELL_SIZE+noiseX(leftX, ly), cy+noiseY(leftX, ly))
+					for (var xx=leftX+1; xx<=lx; xx++) {
+						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly), cy+noiseY(xx, ly))
+					}
+					xx--;
+					ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+cy+CELL_SIZE+noiseY(xx, ly+1))
+					for (var xx=lx; xx>=leftX; xx--) {
+						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+cy+CELL_SIZE+noiseY(xx, ly+1))
+					}
+					ctx.closePath();
+					ctx.fill()
 				}
 				leftX = lx+1;
 			}
 			prevType = curType;
 			pix+= 4;
-		} 
+		})
 		cy += CELL_SIZE;
 	}
 	ctx.restore()
@@ -265,7 +286,7 @@ initFu("Digging Caves", 10, function() {
 	typeMap = {1: '#333', 	//ROCK  #222
 			7: cave_pattern, //CAVE #666
 			4: '#7f7', //CAVE_FLOOR #888
-			2: '#974', // GROUND   #444
+			2: ground_pattern, // GROUND   #444
 			3: grass_pattern,// VEGETATION  #eee 
 			0: 0// AIR #0000
 	}
@@ -282,6 +303,6 @@ initFu("Digging Caves", 10, function() {
 
 	
 	drawToBackBuff(0, 0, 0,0, BB_WIDTH,BB_HEIGHT);
-	drawImg(groundCtx, groundBackBuffs[curBackBuffInd], 0,0)
+	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 })
 

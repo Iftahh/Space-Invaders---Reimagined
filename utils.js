@@ -79,6 +79,7 @@ createCanvas = function(w,h) {
 	  return c;
 	}
 
+avg = function(a,b) { return (a+b)/2 }
 
 // LAYERS
 canvases = [];
@@ -100,7 +101,7 @@ range(4, function(i) {
  // current canvas to draw to - may toggle around for double buffering
 
 skyCtx = contexts[0]
-groundCtx = contexts[1]
+mountainCtx = contexts[1]
 spritesCtx = contexts[2]
 waterCtx = contexts[3]
 // Overlay context (overlay)
@@ -145,10 +146,26 @@ if (!RQ) {
 
 //render to canvas - creates a canvas, render to it with a renderFunction,
 //and return it with added draw(x,y,w,h) method that draws the canvas to the main one
-var r2c=function (width, height, renderFunction) {
- var canvas = createCanvas(width, height)
- renderFunction(Ctx(canvas), canvas);
- return canvas;
+r2c=function (width, height, renderFunction) {
+   var canvas = createCanvas(width, height)
+   renderFunction(Ctx(canvas), canvas);
+   return canvas;
+}
+
+// get img data from 
+getPixels= function(ctx) {
+  return ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
+}
+
+
+var render2pixels=function(width, height, renderFunction) {
+	var canvas = r2c(width, height, function(ctx, canvas) {
+		var imgData=getPixels(ctx),
+	    	d = imgData.data;
+		renderFunction(d,ctx,canvas);
+	    ctx.putImageData(imgData,0,0);
+	})
+	return canvas;
 }
 
 drawImg = function(ctx, img, x,y) {

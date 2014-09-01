@@ -7,12 +7,12 @@ var painty = function(buffer, width,height, base_min, base_top, mndirx,mxdirx, m
 			return buffer[ei] ?
 						buffer[ei] :
 						buffer[ei]= irnda(seed_chance) ? 
-									minmax(0, 255, (irnda(color_step)+fu((width+x-irndab(mndirx,mxdirx)) %width, 
+									minmax(0, U8, (irnda(color_step)+fu((width+x-irndab(mndirx,mxdirx)) %width, 
 											(height+y-irndab(mndiry,mxdiry))%height)))
 									: irndab(base_min,base_top);
 		}
 		catch(e) {
-			console.log(e)
+			if (DBG) console.log(e)
 			return buffer[ei]= irndab(base_min,base_top);
 		}
 	}
@@ -20,10 +20,90 @@ var painty = function(buffer, width,height, base_min, base_top, mndirx,mxdirx, m
 }
 
 
+rgb2hsv = function(r,g,b) {
+    r /= U8;
+    g /= U8;
+    b /= U8;
+    var rr, gg, bb,
+        h, s,
+        v = Math.max(r, g, b),
+        diff = v - Math.min(r, g, b),
+        diffc = function(c){
+            return (v - c) / 6 / diff + 1 / 2;
+        };
 
+    if (diff == 0) {
+        h = s = 0;
+    } else {
+        s = diff / v;
+        rr = diffc(r);
+        gg = diffc(g);
+        bb = diffc(b);
 
+        if (r === v) {
+            h = bb - gg;
+        }else if (g === v) {
+            h = (1 / 3) + rr - bb;
+        }else { // if (b === v) {
+            h = (2 / 3) + gg - rr;
+        }
+        if (h < 0) {
+            h++;
+        }else if (h > 1) {
+            h--;
+        }
+    }
+    return {
+        h: h,
+        s: s,
+        v: v
+    };
+}
 
+hsv2rgb = function(h, s, v) {
+    if (s === undefined) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    var i = (h * 6)|0,
+    	f = h * 6 - i,
+    	p = v * (1 - s),
+    	q = v * (1 - f * s),
+    	t = v * (1 - (1 - f) * s),
+    	r, g, b;
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return {
+        r: (r * U8)|0,
+        g: (g * U8)|0,
+        b: (b * U8)|0
+    };
+}
 
+shiftHSV = function(ctx, h,s,v) {
+	var pixels = getPixels(ctx),
+		d=pixels.data,
+		i=0;
+	range(pixels.width*pixels.height, function() {
+		var hsv= rgb2hsv(d[i],d[i+1],d[i+2])
+		var rgb = hsv2rgb(avg(hsv.h, h), avg(hsv.s, s), avg(hsv.v, v))
+		if (rgb.b > rgb.r) {
+			var t = rgb.r;
+			rgb.r = rgb.b;
+			rgb.b = t;
+		}
+		d[i++] = rgb.r;
+		d[i++] = rgb.g;
+		d[i++] = rgb.b;
+		i++;
+	})
+	ctx.putImageData(pixels,0,0)
+}
 
 
 // displace bitmap pixels
@@ -74,64 +154,98 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 //})
 
 
-//taken from http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
-Filters = {
-	getPixels: function(c) {
-	  var ctx = Ctx(c);
-	  return ctx.getImageData(0,0,c.width,c.height);
-	},
-		
-	filterCanvas: function(filter, c, var_args) {
-	  var args = [Filters.getPixels(c)];
-	  for (var i=2; i<arguments.length; i++) {
-	    args.push(arguments[i]);
-	  }
-	  return filter.apply(null, args);
-	},
+//based on http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
+_convulate = function(pixels, dst, weights) {
+	  
+    side = round(sqrt(weights.length)),
+  	halfSide = side/2|0,
+  	src = pixels.data,
+  	sw = pixels.width,
+  	sh = pixels.height;
+  // go through the destination image pixels
+  //var alphaFac = opaque ? 1 : 0;
+  var dstOff = 0;
+  duRange(sw,sh, function(x,y) {
+      // calculate the weighed sum of the source image pixels that
+      // fall under the convolution matrix
+      var r=0, g=0, b=0;//, a=0;
+      duRange(side, side, function(cx,cy) {
+          var scy = y + cy - halfSide;
+          var scx = x + cx - halfSide;
+          scy += sh*10;
+          scy %= sh;
+          scx += sw*10;
+          scx %= sw;
+          //if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
+            var srcOff = (scy*sw+scx)*4;
+            var wt = weights[cy*side+cx];
+            r += src[srcOff] * wt;
+            g += src[srcOff+1] * wt;
+            b += src[srcOff+2] * wt;
+            //a += src[srcOff+3] * wt;
+          //}
+      })
+      dst[dstOff++] = r;
+      dst[dstOff++] = g;
+      dst[dstOff++] = b;
+      dst[dstOff++] = U8;//a + alphaFac*(255-a);
+  })
+}
 
-	tmpCanvas: DC.createElement('canvas'),
+convolute = function(ctxIn, ctxOut, weights) {
+  var  pixels = getPixels(ctxIn),
+  	   output = (ctxOut || ctxIn).createImageData(pixels.width, pixels.height);
+ 
+  _convulate(pixels, output.data, weights);
+  if (!ctxOut) {
+	  return output;
+  }
+  ctxOut.putImageData(output, 0, 0)
+}
+
+
+
+emboss = function(ctx) {
+	var w=ctx.canvas.width, h=ctx.canvas.height;
 	
-	createImageData: function(w,h) {
-	  return this.tmpCtx.createImageData(w,h);
-	},
+	// find top-left edges
+	var edges1 = createCanvas(w,h)
+	convolute(ctx, Ctx(edges1),  
+			[-1,  0,  0,  0,  0,
+		     0, -2,  0,  0,  0,
+		     0,  0,  3,  0,  0,
+		     0,  0,  0,  0,  0,
+		     0,  0,  0,  0, 0]
+			);
+
 	
-	convolute: function(pixels, weights) {
-		  var side = round(sqrt(weights.length));
-		  var halfSide = side/2|0;
-		  var src = pixels.data;
-		  var sw = pixels.width;
-		  var sh = pixels.height;
-		  var output = Filters.createImageData(sw, sh);
-		  var dst = output.data;
-		  // go through the destination image pixels
-		  //var alphaFac = opaque ? 1 : 0;
-		  var dstOff = 0;
-		  duRange(sw,sh, function(x,y) {
-		      // calculate the weighed sum of the source image pixels that
-		      // fall under the convolution matrix
-		      var r=0, g=0, b=0;//, a=0;
-		      duRange(side, side, function(cx,cy) {
-		          var scy = y + cy - halfSide;
-		          var scx = x + cx - halfSide;
-		          scy += sh*10;
-		          scy %= sh;
-		          scx += sw*10;
-		          scx %= sw;
-		          //if (scy >= 0 && scy < sh && scx >= 0 && scx < sw) {
-		            var srcOff = (scy*sw+scx)*4;
-		            var wt = weights[cy*side+cx];
-		            r += src[srcOff] * wt;
-		            g += src[srcOff+1] * wt;
-		            b += src[srcOff+2] * wt;
-		            //a += src[srcOff+3] * wt;
-		          //}
-		      })
-		      dst[dstOff++] = r;
-		      dst[dstOff++] = g;
-		      dst[dstOff++] = b;
-		      dst[dstOff++] = U8;//a + alphaFac*(255-a);
-		  })
-		  return output;
-		}
-};
-Filters.tmpCtx = Filters.tmpCanvas.getContext('2d');
+	// find the bottom-right edges
+	var filtered = convolute(ctx, 0,
+			[0,  0,  0,  0,  0,
+		     0, 0,  0,  0,  0,
+		     0,  0,  3,  0,  0,
+		     0,  0,  0,  -2,  0,
+		     0,  0,  0,  0, -1]
+		),
+		i=0, 
+		data = filtered.data;
+	// inverse r,g,b 
+	range(w*h, function() {
+		range(3,function() {
+			data[i] = U8-data[i];
+			i++;
+		})
+		i++;
+	})
+	
+	var edges2 = createCanvas(w,h); 
+	Ctx(edges2).putImageData(filtered, 0, 0);
+
+	// draw the bottom-right darker
+	ctx.globalCompositeOperation = "darken"; 
+	ctx.drawImage(edges2,0,0,w,h);
+
+	// draw the top-left lighter
+	ctx.globalCompositeOperation = "lighter";
+	ctx.drawImage(edges1,0,0,w,h);
+}
