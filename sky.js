@@ -29,4 +29,4 @@ sky_canvas = r2c(sky_width, HEIGHT, function(ctx, canvas) {
 skyCtx.fillStyle = skyCtx.createPattern(sky_canvas, 'repeat-x');;
 skyCtx.fillRect(0,0,WIDTH,HEIGHT);
 
-}, 1000)
+}, DBG?0:1000)

@@ -54,6 +54,8 @@ function renderWater() {
 	})
 	waterCtx.closePath();
 	waterCtx.fill();
+	waterCtx.strokeStyle = "#eef";
+	waterCtx.stroke()
 }
 
 initFu("Raining water", 3, function() {
@@ -145,7 +147,6 @@ water_canvas = function(P) {
 
 water_frames = [];
 
-WATER_FRAMES = 10
 range(WATER_FRAMES, function(i) {
 	initFu("Waving waves", 3, (function(_i) {
 			return function() {

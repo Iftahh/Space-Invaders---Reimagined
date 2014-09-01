@@ -3,7 +3,7 @@
 
 // fractal mountain based on http://www.gameprogrammer.com/fractal.html#ptII
 
-initFu("Chiseling Mountains", 10, function() {
+initFu("Digging Caves", 10, function() {
 	
 
 // Make level form the same every time to avoid bad levels
@@ -64,68 +64,110 @@ fill1DFractArray =function(heights, heightScale, h) {
 
 
 
-level_img = createCanvas(LevelW, LevelH)
-//level_collision = createCanvas(LevelW, LevelH)
+level_img = createCanvas(levelWidth, levelHeight);
 
-level = r2c(LevelW, LevelH, function(ctx, canvas) {
-	ctx.lineWidth = 6;
-	ctx.strokeStyle = "#ddd";
-	ctx.textAlign = 'center';
-	ctx.font = "bold 80px Arial";
-	ctx.fillStyle = cave_pattern;
+// these colors in level indicate what kind of cell to draw in background canvas
 
-	// text air wrapper
-	var T = "JS13KGAMES 2014";
-	ctx.miterLimit=2;
-	ctx.strokeText(T,LevelW/2, LevelH - 250);
+AIR = 'rgba(0,0,0,0)';
+CAVE_FLOOR = '#888';
+CAVE = '#eee';  // underground AIR
+GROUND = '#444';
+VEGETATION = '#666';
+ROCK = '#222'; // unbreakable
+
+
+/***
+ * Generate level map by drawing different colors in a small canvas
+ * see constants above
+ */
+level = r2c(levelWidth, levelHeight, function(ctx, canvas) {
+
 	
-	// mountain
-	ctx.beginPath();
+	ctx.fillStyle = AIR;
+	ctx.fillRect(0,0, levelWidth, levelHeight);
+		
+	
+	ctx.shadowColor = VEGETATION;
+	ctx.shadowBlur = 1;
+	ctx.shadowOffsetX = 0;
+	ctx.shadowOffsetY = -7;
+	ctx.fillStyle = GROUND;
+    
+//	ctx.textAlign = 'center';
+//	ctx.font = "bold 80px Arial";
+//
+//	// text VEGETATION wrapper
+//	var T = "JS13KGAMES 2014";
+//	ctx.miterLimit=2;
+	//ctx.strokeText(T,levelWidth/2, levelHeight - 250);
+	
+	// fractal mountain
 	heights = []
-	heights[LevelW] = 0;
-	fill1DFractArray(heights, LevelH, .7);
-	//var prev = LevelH;
-	ctx.lineTo(0,LevelH);
-	range(LevelW, function(x) {
-		//var cur = (prev +10-20*(prev/LevelH)+rndab(-2,2)+rndab(-2,2))|0;
-		//prev = cur;
-		if (!heights[x]) {
-			console.log(x, heights[x])
-		}
-		ctx.lineTo(x, LevelH-(heights[x] +
-				(.4*LevelH *  sq(sin(2*TPI*x/LevelW)) *sq(sin(PI+3*TPI*x/LevelW))))
-		);
-//		ctx.lineTo(x, irndab(2,20)+
-//					  (LevelH-30)*	(.5+.4*sin(0.6+6*TPI*x/WIDTH))
-//						  				   *(.5 -.3*(  sin(1.3+ (1.2+sin(0.4+TPI*x/LevelW)) *TPI*x/LevelW)) 
-//						  					   +.2*sq(sin(0.7+3*TPI*x/LevelW)))
-//				  );
-	});
-	ctx.lineTo(LevelW+1,LevelH);
+	heights[levelWidth] = 0;
+	fill1DFractArray(heights, levelHeight*1.5, .7);
+	
+	ctx.beginPath();
+	ctx.lineTo(0,levelHeight);
+
+	range(levelWidth, function(x) {
+		// add sinuses on top of the fractal
+		heights[x] += .4*levelHeight *  sq(sin(2*TPI*x/levelWidth)) *sq(sin(PI+3*TPI*x/levelWidth))
+		// lower a bit the left/right edges of level
+		heights[x] *= 1/(1+sq(.001*(x-levelWidth/2)))
+
+		// make the mountain path
+		ctx.lineTo(x, levelHeight-heights[x]);
+	})
+	
+	ctx.lineTo(levelWidth+1,levelHeight);
 	ctx.closePath();
-	ctx.stroke();
+	ctx.fill();
+	
+	ctx.clip();
+
+	ctx.shadowOffsetY = 1;
+	ctx.lineWidth = 12;
+	ctx.shadowColor = CAVE_FLOOR;
+	ctx.beginPath();
+	ctx.strokeStyle = CAVE;
+	// draw caves
+	ctx.moveTo(0,levelHeight * .6);
+	ctx.lineTo(levelWidth, levelHeight *.9);
+	ctx.moveTo(0,levelHeight * .9);
+	ctx.lineTo(levelWidth, levelHeight *.6);
+	ctx.moveTo(levelWidth*.1,0);
+	ctx.lineTo(levelWidth*.7, levelHeight*.81)
+    ctx.moveTo(levelWidth*.9,0)
+	ctx.lineTo(levelWidth*.3, levelHeight*.81)
+	ctx.stroke()
+	
+	ctx.beginPath()
+	ctx.fillStyle = CAVE;
+	ctx.arc(levelWidth*.10, levelHeight*.75, 30, 0, TPI)
+	ctx.arc(levelWidth*.90, levelHeight*.75, 30, 0, TPI)
 	ctx.fill();
 	
 	// text full inner
-	ctx.fillStyle = "#000";
-	ctx.fillText(T,LevelW/2, LevelH - 250);
-	ctx.fillStyle = "#fff";
+//	ctx.fillStyle = ROCK;
+//	ctx.fillText(T,levelWidth/2, levelHeight - 250);
+//	ctx.fillStyle = CAVE;
+//	T = "ISLAND WAR";
+//	ctx.fillText(T,levelWidth/2, levelHeight - 150);
 	
+//	drawImg(groundCtx, canvas, 0,0)
 
-	ctx.fillStyle = "#ddd";
-	T = "ISLAND WAR";
-	ctx.fillText(T,LevelW/2, LevelH - 150);
-	
-//		var pixels = ctx.getImageData(0,0,LevelW, LevelH).data;
+	levelPixels = ctx.getImageData(0,0,levelWidth, levelHeight).data;
+});
+
 //		var i=0;
-//		for (var y=0; y<LevelH; y++) {
-//			var _y = round(HEIGHT*y/LevelH);
-//			for (var x=0; x<LevelW; x++) {
-//				var site = {x: round(WIDTH*x/LevelW) + irndab(-1,2), 
+//		for (var y=0; y<levelHeight; y++) {
+//			var _y = round(HEIGHT*y/levelHeight);
+//			for (var x=0; x<levelWidth; x++) {
+//				var site = {x: round(WIDTH*x/levelWidth) + irndab(-1,2), 
 //							y: _y+irndab(-1,2) 
 //							}
 //					if (pixels[i] > 210 && pixels[i] < 235) {
-//					// air
+//					// AIR
 //					site.c = 0;
 //				}
 //				else  if (pixels[i] > 150 && pixels[i] < 180) {
@@ -143,7 +185,103 @@ level = r2c(LevelW, LevelH, function(ctx, canvas) {
 //				i += 4;
 //			}
 //		}
-	drawImg(groundCtx, canvas, 0,0)
-
-});
 })
+
+
+/*****
+ * Backbuffers allow efficient conversion from level to bitmap only when necessary
+ */
+PAD = 100; // 100px padding
+BB_WIDTH = WIDTH+2*PAD; // backbuffer width = width+padding from left and right
+BB_HEIGHT = HEIGHT+2*PAD;
+
+groundBackBuffs = [];
+groundBackCtx = [];
+range(2, function() {
+	var canv = createCanvas(BB_WIDTH, BB_HEIGHT);
+	groundBackBuffs.push(canv);
+	groundBackCtx.push(canv.getContext('2d'))
+})
+
+curBackBuffInd = 0;
+
+
+
+/*************************************************
+ * drawToBackBuff
+ * ---------------
+ * Generate textured bitmap from level info
+ * -----------------------------------------
+ * 
+ * lvlX,Y = top left corner in level data
+ * x,y = destination left corner in back buffer
+ * w,h = width,height of section in back buffer to draw
+ * 
+ *  Note: assumes the x,y map to beginning of 4x4 cell (see CELL_SIZE in globals.js)
+ * for each pixel in level draw 4x4 cell according to type
+ */
+drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
+	var ctx = groundBackCtx[curBackBuffInd],
+		cellsPerRow = 1+w/CELL_SIZE,
+		numRows = 1+h/CELL_SIZE,
+		x0=lvlX*CELL_SIZE,
+		y0=lvlY*CELL_SIZE,
+		cy=y0+y;
+	ctx.save()
+	ctx.translate(-x0,-y0);
+	x0+=x;
+	ctx.clearRect(x0,y0,w,h);
+	for (var ly=lvlY; ly<lvlY+numRows; ly++) {
+		var pix = (ly*levelWidth+lvlX)*4, // 4 bytes per pixel
+			prevType = colorToType(levelPixels[pix]),
+			leftX=0; // beginning of rectangle
+		for (var lx=0; lx<cellsPerRow; lx++) {
+			// find horizontal strips- make rectangles of them
+			var curType = colorToType(levelPixels[pix]);
+			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
+				console.log(curType+" pixel at pix "+pix +"  y="+ly+" x="+(lx+lvlX));
+			}
+			if ((curType != prevType) || lx==cellsPerRow-1) {
+				if (prevType) {
+					ctx.fillStyle = prevType;
+					ctx.fillRect(x0+leftX*CELL_SIZE, cy, (lx-leftX)*CELL_SIZE, CELL_SIZE);
+					//console.log("Filling rect at "+(x+leftX*CELL_SIZE)+','+ cy+ ' w:'+((lx-leftX)*CELL_SIZE+ '  color: '+curType));
+				}
+				leftX = lx+1;
+			}
+			prevType = curType;
+			pix+= 4;
+		} 
+		cy += CELL_SIZE;
+	}
+	ctx.restore()
+}
+
+initFu("Digging Caves", 10, function() {
+
+	/****
+	 * Convert from level to canvas fillStyle that will be used to draw to the canvas
+	 */
+	typeMap = {1: '#333', 	//ROCK  #222
+			7: cave_pattern, //CAVE #666
+			4: '#7f7', //CAVE_FLOOR #888
+			2: '#974', // GROUND   #444
+			3: grass_pattern,// VEGETATION  #eee 
+			0: 0// AIR #0000
+	}
+	colorToType = function(red) {
+		// red is the "R" in RGBA of the color
+		// for now I'm keeping the other (G,B,A) channels for future use (ie. deadly, hidden passage, etc..)
+		
+		//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
+		//that is why not using the lower 5 binary digits 
+		
+		var res = typeMap[red>>5];
+		return res===undefined? grass_pattern : res;
+	}
+
+	
+	drawToBackBuff(0, 0, 0,0, BB_WIDTH,BB_HEIGHT);
+	drawImg(groundCtx, groundBackBuffs[curBackBuffInd], 0,0)
+})
+

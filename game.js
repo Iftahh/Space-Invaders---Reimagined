@@ -120,6 +120,7 @@ water = ParticlePointEmitter(250, {
 	sizeRandom: 1,
 	emissionRate: 100,
 	speed: 0,
+	colorEdge: 'rgba(240,240,255,0)',
 	speedRandom: .5,
 	startColor: [40, 50, 120, 1],
 	startColorRandom: [12, 12, 12, 0],
@@ -234,13 +235,13 @@ var animFrame = function(t) {
 	}
 
 	var dx=dy = 0;
-	if (MOUSE_POS.x > WIDTH - 20 && OffsetX < LevelW-WIDTH) {
+	if (MOUSE_POS.x > WIDTH - 20 && OffsetX < CELL_SIZE*levelWidth-WIDTH) {
 		dx = 5;
 	}
 	if (MOUSE_POS.x < 20 && OffsetX > 0) {
 		dx = -5;
 	}
-	if (MOUSE_POS.y > HEIGHT - 20 && OffsetY < LevelH-HEIGHT) {
+	if (MOUSE_POS.y > HEIGHT - 20 && OffsetY < CELL_SIZE*levelHeight-HEIGHT) {
 		dy = 5;
 	}
 	if (MOUSE_POS.y < 20 && OffsetY > 0) {
@@ -249,9 +250,13 @@ var animFrame = function(t) {
 	if (dx || dy) {
 		OffsetX += dx;
 		OffsetY += dy;
-		groundCtx.translate(-dx, -dy);
-		groundCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
-		drawImg(groundCtx, level, 0,0)
+//		groundCtx.translate(-dx, -dy);
+//		groundCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
+//		drawImg(groundCtx, level, 0,0)
+		groundCtx.clearRect(0,0,WIDTH,HEIGHT)
+		drawToBackBuff(OffsetX, OffsetY, 0,0, BB_WIDTH,BB_HEIGHT);
+		drawImg(groundCtx, groundBackBuffs[curBackBuffInd], 0,0)
+
 	}
 	
     RQ(animFrame);

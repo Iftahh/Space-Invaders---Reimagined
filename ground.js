@@ -1,6 +1,7 @@
 
-initFu("Digging caves", 10, function() {
+initFu("Chiseling rocks", 10, function() {
 
+	// TODO: util function to work on image data!
 	cave_canvas = r2c(ground_pattern_size, ground_pattern_size, function(ctx, canvas) {
 		var imgData=ctx.createImageData(ground_pattern_size,ground_pattern_size);
 	    var d = imgData.data;
@@ -17,26 +18,28 @@ initFu("Digging caves", 10, function() {
 	    ctx.putImageData(imgData,0,0);
 	})
 
+
+	grass_canvas = r2c(WIDTH, HEIGHT, function(ctx, canvas) {
+		var imgData=ctx.createImageData(WIDTH,HEIGHT);
+	    var d = imgData.data;
+	    var red = painty([], WIDTH, HEIGHT, 60,150, -3,-1, 1,3, -2, 100);
+	    var green = painty([], WIDTH, HEIGHT,40,90, -3,-1, 1,3, 3, 200);
+	    var blue = painty([], WIDTH, HEIGHT, 70, 120, -3,-1, 1,3, -3, 100);
+	    var i=0; // pixel index
+	    duRange(WIDTH,HEIGHT, function(x,y) {
+	    	d[i++] = red(x,y);
+			d[i++] = green(x,y);
+			d[i++] = blue(x,y);    		
+			d[i++] = U8;
+	    })
+	    ctx.putImageData(imgData,0,0);
+	})
+	grass_pattern = groundCtx.createPattern(grass_canvas, 'repeat');
+	grass_canvas = 0;
 });
 
-//grass_canvas = r2c(WIDTH, HEIGHT, function(ctx, canvas) {
-//	var imgData=ctx.createImageData(WIDTH,HEIGHT);
-//    var d = imgData.data;
-//    var red = painty([], WIDTH, HEIGHT, 60,150, -3,-1, 1,3, -2, 100);
-//    var green = painty([], WIDTH, HEIGHT,40,90, -3,-1, 1,3, 3, 200);
-//    var blue = painty([], WIDTH, HEIGHT, 70, 120, -3,-1, 1,3, -3, 100);
-//    var i=0; // pixel index
-//    duRange(WIDTH,HEIGHT, function(x,y) {
-//    	d[i++] = red(x,y);
-//		d[i++] = green(x,y);
-//		d[i++] = blue(x,y);    		
-//		d[i++] = U8;
-//    })
-//    ctx.putImageData(imgData,0,0);
-//})
-
 // drawImg(groundCtx, cave_canvas, 0,0);
-initFu("Digging caves", 3, function() {
+initFu("Chiseling rocks", 3, function() {
 
 	var filtered = Filters.filterCanvas(Filters.convolute, cave_canvas,
 			  [   .1,  .1,  .1,
@@ -50,7 +53,7 @@ initFu("Digging caves", 3, function() {
 }, 100);
 
 //drawImg(groundCtx, cave_canvas, 0,0);
-initFu("Digging caves", 3, function() {
+initFu("Chiseling rocks", 3, function() {
 	
 	// find left top edges
 	filtered = Filters.filterCanvas(Filters.convolute, cave_canvas,
@@ -66,7 +69,7 @@ initFu("Digging caves", 3, function() {
 	ctx1.putImageData(filtered, 0, 0);
 }, 100);
 
-initFu("Digging caves", 3, function() {
+initFu("Chiseling rocks", 3, function() {
 	filtered = Filters.filterCanvas(Filters.convolute, cave_canvas,
 			[0,  0,  0,  0,  0,
 		     0, 0,  0,  0,  0,
@@ -89,7 +92,7 @@ initFu("Digging caves", 3, function() {
 	ctx2.putImageData(filtered, 0, 0);
 }, 100)
 
-initFu("Digging caves", 3, function() {
+initFu("Chiseling rocks", 3, function() {
 
 cave_ctx.globalCompositeOperation = "darken"; 
 cave_ctx.drawImage(edges2,0,0,ground_pattern_size,ground_pattern_size);
@@ -102,6 +105,7 @@ cave_ctx.drawImage(edges1,0,0,ground_pattern_size,ground_pattern_size);
 cave_ctx=edges2=edges1=ct1=ctx2 = null; // free mem
 
 cave_pattern = groundCtx.createPattern(cave_canvas, 'repeat');
+cave_canvas = 0;
 
 }, 100);
 //groundCtx.drawImage(cave_canvas, 0,0,ground_pattern_size,ground_pattern_size)
