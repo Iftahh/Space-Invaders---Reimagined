@@ -50,13 +50,24 @@ initFu(TXT, 6, function() {
 	})
 }, 100);
 
+
 //drawImg(mountainCtx, cave_canvas, 0,0);
 initFu(TXT, 3, function() {
+	var shiftHSV = function(h,s,v) {
+		return function(hsv) {
+			// some pixels are not brownish despite the shift!
+			// not sure why, maybe some overflow?  for now use the min(.4) hack - 
+			// the hack produces bright green pixels instead of blue, still bad but not too much
+			var rgb = hsv2rgb(avg(min(hsv.h,.4), h), avg(hsv.s, s), avg(hsv.v, v))
+			
+			return rgb;
+		}
+	}
 	
 	emboss(ground_ctx);
-	shiftHSV(ground_ctx, .1, .76, .34)
+	applyHSVFilter(ground_ctx, shiftHSV(.1, .76, .34))
 	emboss(cave_ctx);
-	shiftHSV(cave_ctx, .08, .41, .16)
+	applyHSVFilter(cave_ctx, shiftHSV(.08, .31, .16))
 	cave_pattern = mountainCtx.createPattern(cave_canvas, 'repeat');
 	ground_pattern = mountainCtx.createPattern(ground_canvas, 'repeat');
 

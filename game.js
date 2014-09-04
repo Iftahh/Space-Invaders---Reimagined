@@ -185,18 +185,18 @@ var animFrame = function(t) {
 			water.emissionRate = 20*abs(Player.v.y);
 			//water.angle = Math.atan2(-abs(Player.v.y), 2*Player.v.x) * 180/PI;
 		}
-		if (Player.pos.y> water_y+100)
-			Player.pos.y = 0;
+//		if (Player.pos.y> water_y+100)
+//			Player.pos.y = 0;
 	}
-	if (Player.pos.x > WIDTH+10) {
-		Player.pos.x = 0;
-	}
-	if (Player.pos.x < -10) {
-		Player.pos.x = WIDTH;
-	} 
+//	if (Player.pos.x > WIDTH+10) {
+//		Player.pos.x = 0;
+//	}
+//	if (Player.pos.x < -10) {
+//		Player.pos.x = WIDTH;
+//	} 
 
-	jetpack.position.x = Player.pos.x-(Player.leftFace ? 5: 15);
-	jetpack.position.y = Player.pos.y-25;
+	jetpack.position.x = /*Player.pos.x*/ WIDTH/2-(Player.leftFace ? 5: 15);
+	jetpack.position.y = /*Player.pos.y*/HEIGHT/2-25;
 	
 	updateWater(dt);
 	jetpack.update(dt);
@@ -216,7 +216,7 @@ var animFrame = function(t) {
 
 	if (red_man) {
 		Player.angle = Math.atan2(MOUSE_POS.y - Player.pos.y, MOUSE_POS.x - Player.pos.x);
-		draw_man(0, Player.pos, Player.angle);
+		draw_man(0, {x:WIDTH/2, y:HEIGHT/2}, Player.angle);
 	}
 
 	waterCtx.save()
@@ -234,30 +234,32 @@ var animFrame = function(t) {
 		water_y = HEIGHT-10;
 	}
 
-	var dx=dy = 0;
-	if (MOUSE_POS.x > WIDTH - 20 && OffsetX < CELL_SIZE*levelWidth-WIDTH) {
-		dx = 5;
-	}
-	if (MOUSE_POS.x < 20 && OffsetX > 0) {
-		dx = -5;
-	}
-	if (MOUSE_POS.y > HEIGHT - 20 && OffsetY < CELL_SIZE*levelHeight-HEIGHT) {
-		dy = 5;
-	}
-	if (MOUSE_POS.y < 20 && OffsetY > 0) {
-		dy = -5;
-	}
-	if (dx || dy) {
-		OffsetX += dx;
-		OffsetY += dy;
+//	var dx=dy = 0;
+//	if (MOUSE_POS.x > WIDTH - 20 && OffsetX < CELL_SIZE*levelWidth-WIDTH) {
+//		dx = 5;
+//	}
+//	if (MOUSE_POS.x < 20 && OffsetX > 0) {
+//		dx = -5;
+//	}
+//	if (MOUSE_POS.y > HEIGHT - 20 && OffsetY < CELL_SIZE*levelHeight-HEIGHT) {
+//		dy = 5;
+//	}
+//	if (MOUSE_POS.y < 20 && OffsetY > 0) {
+//		dy = -5;
+//	}
+//	if (dx || dy) {
+//		OffsetX += dx;
+//		OffsetY += dy;
+	OffsetY = Player.pos.y - HEIGHT/2 |0;
+	OffsetX = Player.pos.x - WIDTH/2 |0;
 //		mountainCtx.translate(-dx, -dy);
 //		mountainCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
 //		drawImg(mountainCtx, level, 0,0)
 		mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
-		drawToBackBuff(OffsetX, OffsetY, 0,0, BB_WIDTH,BB_HEIGHT);
+		drawToBackBuff(OffsetX-OffsetX%CELL_SIZE, OffsetY-OffsetY%CELL_SIZE, 0,0, BB_WIDTH,BB_HEIGHT);
 		drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 
-	}
+	//}
 	
     RQ(animFrame);
     

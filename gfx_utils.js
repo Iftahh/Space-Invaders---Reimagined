@@ -85,18 +85,13 @@ hsv2rgb = function(h, s, v) {
     };
 }
 
-shiftHSV = function(ctx, h,s,v) {
+applyHSVFilter = function(ctx, fu) {
 	var pixels = getPixels(ctx),
 		d=pixels.data,
 		i=0;
 	range(pixels.width*pixels.height, function() {
-		var hsv= rgb2hsv(d[i],d[i+1],d[i+2])
-		var rgb = hsv2rgb(avg(hsv.h, h), avg(hsv.s, s), avg(hsv.v, v))
-		if (rgb.b > rgb.r) {
-			var t = rgb.r;
-			rgb.r = rgb.b;
-			rgb.b = t;
-		}
+		var hsv= rgb2hsv(d[i],d[i+1],d[i+2]),
+			rgb = fu(hsv);
 		d[i++] = rgb.r;
 		d[i++] = rgb.g;
 		d[i++] = rgb.b;

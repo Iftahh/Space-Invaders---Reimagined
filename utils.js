@@ -144,14 +144,6 @@ if (!RQ) {
 }
 
 
-//render to canvas - creates a canvas, render to it with a renderFunction,
-//and return it with added draw(x,y,w,h) method that draws the canvas to the main one
-r2c=function (width, height, renderFunction) {
-   var canvas = createCanvas(width, height)
-   renderFunction(Ctx(canvas), canvas);
-   return canvas;
-}
-
 // get img data from 
 getPixels= function(ctx) {
   return ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
@@ -159,12 +151,11 @@ getPixels= function(ctx) {
 
 
 var render2pixels=function(width, height, renderFunction) {
-	var canvas = r2c(width, height, function(ctx, canvas) {
-		var imgData=getPixels(ctx),
-	    	d = imgData.data;
-		renderFunction(d,ctx,canvas);
-	    ctx.putImageData(imgData,0,0);
-	})
+	var canvas = createCanvas(width, height), ctx=Ctx(canvas)
+		imgData=getPixels(ctx),
+	    d = imgData.data;
+	renderFunction(d,ctx,canvas);
+    ctx.putImageData(imgData,0,0);
 	return canvas;
 }
 

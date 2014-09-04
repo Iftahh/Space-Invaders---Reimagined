@@ -2,36 +2,38 @@
 
 yellow_man = red_man = 0;
 
-man_canvas = r2c(96,48, function(ctx) {
-	var manImage = new Image();
-	manImage.onload = function() {
-	  ctx.drawImage(manImage, 0, 0, 96,48);
-	  yellow_man = createCanvas(96,48);
-	  red_man = createCanvas(96,48);
-	  var rctx = Ctx(red_man);
-	  var bctx = Ctx(yellow_man);
-	  var pixels = ctx.getImageData(0,0,96,48).data;
-	  var redid = rctx.createImageData(96,48);
-	  var yellowid = bctx.createImageData(96,48);
-	  var red = redid.data;
-	  var yellow = yellowid.data;
-	  var i=0;
-	  duRange(96,48, function() {
-		  red[i] = yellow[i] = pixels[i];
-		  i++;
-		  red[i]=pixels[i]/2;
-		  yellow[i]=pixels[i];
-		  i++;
-		  red[i]=yellow[i]=pixels[i]/2;
-		  i++;
-		  red[i]=yellow[i]=pixels[i];
-		  i++;
-	  });
-	  rctx.putImageData(redid,0,0)
-	  bctx.putImageData(yellowid,0,0)
-	};
-	manImage.src = './man.gif';
-})
+man_canvas = createCanvas(96,48);
+
+var	ctx=Ctx(man_canvas),
+	manImage = new Image();
+manImage.onload = function() {
+  ctx.drawImage(manImage, 0, 0, 96,48);
+  yellow_man = createCanvas(96,48);
+  red_man = createCanvas(96,48);
+  var rctx = Ctx(red_man);
+  var bctx = Ctx(yellow_man);
+  var pixels = ctx.getImageData(0,0,96,48).data;
+  var redid = rctx.createImageData(96,48);
+  var yellowid = bctx.createImageData(96,48);
+  var red = redid.data;
+  var yellow = yellowid.data;
+  var i=0;
+  duRange(96,48, function() {
+	  red[i] = yellow[i] = pixels[i];
+	  i++;
+	  red[i]=pixels[i]/2;
+	  yellow[i]=pixels[i];
+	  i++;
+	  red[i]=yellow[i]=pixels[i]/2;
+	  i++;
+	  red[i]=yellow[i]=pixels[i];
+	  i++;
+  });
+  rctx.putImageData(redid,0,0)
+  bctx.putImageData(yellowid,0,0)
+};
+manImage.src = './man.gif';
+
 
 draw_man = function(color, v, angle) {
 	var man = color ? red_man: yellow_man;
