@@ -173,6 +173,8 @@ var animFrame = function(t) {
 	Player.v.y = minmax(-12,22, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
+	
+	
 	if (Player.pos.y > water_y) {
 		if (above) {
 			var x = Player.pos.x;
@@ -185,18 +187,25 @@ var animFrame = function(t) {
 			water.emissionRate = 20*abs(Player.v.y);
 			//water.angle = Math.atan2(-abs(Player.v.y), 2*Player.v.x) * 180/PI;
 		}
-//		if (Player.pos.y> water_y+100)
-//			Player.pos.y = 0;
+		if (Player.pos.y> water_y+HEIGHT*.5)
+			Player.pos.y = 0;
 	}
-//	if (Player.pos.x > WIDTH+10) {
-//		Player.pos.x = 0;
-//	}
-//	if (Player.pos.x < -10) {
-//		Player.pos.x = WIDTH;
-//	} 
+	if (Player.pos.x > WORLD_WIDTH+WIDTH) {
+		Player.pos.x = -WIDTH;
+	}
+	if (Player.pos.x < -WIDTH) {
+		Player.pos.x = WORLD_WIDTH+WIDTH;
+	} 
+	
+	// no more updates to player pos at this frame - update camera to point to player
+	
+	OffsetY = Player.pos.y - HEIGHT/2 |0;
+	OffsetX = Player.pos.x - WIDTH/2 |0;
+	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
+	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY)
 
-	jetpack.position.x = /*Player.pos.x*/ WIDTH/2-(Player.leftFace ? 5: 15);
-	jetpack.position.y = /*Player.pos.y*/HEIGHT/2-25;
+	jetpack.position.x = Player.pos.x; // WIDTH/2-(Player.leftFace ? 5: 15);
+	jetpack.position.y = Player.pos.y; //HEIGHT/2-25;
 	
 	updateWater(dt);
 	jetpack.update(dt);
@@ -204,9 +213,9 @@ var animFrame = function(t) {
 	water.update(dt);
 
 	
-	waterCtx.clearRect(0,0,WIDTH,HEIGHT);
+	waterCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
 
-	spritesCtx.clearRect(0,0,WIDTH,HEIGHT);
+	spritesCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
 
 	spritesCtx.save()
 	spritesCtx.globalCompositeOperation = "lighter";
@@ -215,8 +224,8 @@ var animFrame = function(t) {
 	smoke.renderParticles(spritesCtx);
 
 	if (red_man) {
-		Player.angle = Math.atan2(MOUSE_POS.y - Player.pos.y, MOUSE_POS.x - Player.pos.x);
-		draw_man(0, {x:WIDTH/2, y:HEIGHT/2}, Player.angle);
+		Player.angle = Math.atan2(OffsetY+MOUSE_POS.y - Player.pos.y, OffsetX+MOUSE_POS.x - Player.pos.x);
+		draw_man(0, Player.pos, Player.angle);
 	}
 
 	waterCtx.save()
@@ -227,11 +236,12 @@ var animFrame = function(t) {
 		prevFrameInd = frameInd;
 	}
 	renderWater();
+		
 	
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
 	water_y -= 0.01*dt;
-	if (water_y<200) {
-		water_y = HEIGHT-10;
+	if (water_y< WORLD_HEIGHT-1000) {
+		water_y = WORLD_HEIGHT-10;
 	}
 
 //	var dx=dy = 0;
@@ -250,13 +260,11 @@ var animFrame = function(t) {
 //	if (dx || dy) {
 //		OffsetX += dx;
 //		OffsetY += dy;
-	OffsetY = Player.pos.y - HEIGHT/2 |0;
-	OffsetX = Player.pos.x - WIDTH/2 |0;
 //		mountainCtx.translate(-dx, -dy);
 //		mountainCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
 //		drawImg(mountainCtx, level, 0,0)
 		mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
-		drawToBackBuff(OffsetX-OffsetX%CELL_SIZE, OffsetY-OffsetY%CELL_SIZE, 0,0, BB_WIDTH,BB_HEIGHT);
+		drawToBackBuff(OffsetX/5|0, OffsetY/5|0, 0,0, BB_WIDTH,BB_HEIGHT);
 		drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 
 	//}
@@ -265,12 +273,20 @@ var animFrame = function(t) {
     
     // TODO: remove later
     frameCount++;
-	if (t - t0 > 10000) {
-		t0 = t;
-		wind = rndab(-10,10)
-		console.log((frameCount-prevCount)/10, " avg FPS, wind:", wind);
-		prevCount = frameCount;
-	}    
+    if (DBG) {
+    	mountainCtx.font="20px Verdana";
+    	mountainCtx.fillStyle = '#fff';
+    	text= "Wind: "+wind;
+    	text+= "  Player: "+Player.pos.x.toFixed(2)+","+Player.pos.y.toFixed(2);
+		if (t - t0 > 10000) {
+			t0 = t;
+			//wind = rndab(-10,10)
+			//console.log((frameCount-prevCount)/10, " avg FPS, wind:", wind);
+			text += "  FPS: "+(frameCount-prevCount)/10
+			prevCount = frameCount;
+		}
+		mountainCtx.fillText(text, 10,50);
+    }
 };
 
 initFu("Ready!", 10, function() {

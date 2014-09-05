@@ -232,7 +232,7 @@ noiseY = function(x,y) {
  */
 drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 	var ctx = groundBackCtx[curBackBuffInd],
-		cellsPerRow = 1+w/CELL_SIZE,
+		cellsPerRow = 1+w/CELL_SIZE, 
 		numRows = 1+h/CELL_SIZE,
 		x0=lvlX*CELL_SIZE,
 		y0=lvlY*CELL_SIZE,
@@ -242,14 +242,13 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 	x0+=x;
 	ctx.clearRect(x0,y0,w,h);
 	for (var ly=lvlY; ly<lvlY+numRows; ly++) {
-		var pix = (ly*levelWidth+lvlX)*4, // 4 bytes per pixel
-			prevType = colorToType(levelPixels[pix]),
+		var prevType = colorToType(lvlX, ly),
 			leftX=0; // beginning of rectangle
 		range(cellsPerRow, function(lx){
 			// find horizontal strips- make rectangles of them
-			var curType = colorToType(levelPixels[pix]);
+			var curType = colorToType(lvlX+lx, ly);
 			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
-				console.log(curType+" pixel at pix "+pix +"  y="+ly+" x="+(lx+lvlX));
+				console.log(curType+" pixel at y="+ly+" x="+(lx+lvlX));
 			}
 			if ((curType != prevType) || lx>=cellsPerRow-1) {
 				if (prevType) {
@@ -272,7 +271,6 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 				leftX = lx+1;
 			}
 			prevType = curType;
-			pix+= 4;
 		})
 		cy += CELL_SIZE;
 	}
@@ -291,7 +289,30 @@ initFu("Digging Caves", 10, function() {
 			3: grass_pattern,// VEGETATION  #eee 
 			0: 0// AIR #0000
 	}
-	colorToType = function(red) {
+	colorToType = function(x,y) {
+		if (y<0) { 
+			return 0; // above level is only AIR
+		}
+		if (x<0) {
+			if (y>=levelHeight-.2*x) {
+				return ground_pattern; // below level is more ground
+			}
+			else {
+				return 0;
+			}
+		}
+		if (x>=levelWidth) {
+			if (y>= levelHeight+.1*(x-levelWidth)) {
+				return ground_pattern;
+			}
+			else {
+				return 0;
+			}
+		}
+		if (y>=levelHeight) {
+			return ground_pattern;
+		}
+		var red = levelPixels[(y*levelWidth+x)*4]  // 4 bytes per pixel
 		// red is the "R" in RGBA of the color
 		// for now I'm keeping the other (G,B,A) channels for future use (ie. deadly, hidden passage, etc..)
 		

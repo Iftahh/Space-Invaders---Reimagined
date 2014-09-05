@@ -39,10 +39,10 @@ function updateWater(dt) {
 }
 
 function renderWater() {
-
+	waterCtx.translate(OffsetX, 0);
 	waterCtx.beginPath();
-	waterCtx.moveTo(WIDTH, HEIGHT);
-	waterCtx.lineTo(0, HEIGHT);
+	waterCtx.moveTo(WIDTH, OffsetY+HEIGHT);
+	waterCtx.lineTo(0, OffsetY+HEIGHT);
 	var x=0;
 	each(springs, function($) {
 		waterCtx.lineTo(x, $.height + 3*sin(TPI*((x-3.5*frameCount*wind)/322) 

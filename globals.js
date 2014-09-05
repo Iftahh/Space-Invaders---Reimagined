@@ -24,7 +24,7 @@ WORLD_HEIGHT = CELL_SIZE * levelHeight;
  * These are not constants - their values may change in game
  */
 // globals
-water_y = levelHeight*CELL_SIZE-50;  // start 50px above bottom of map 
+water_y = WORLD_HEIGHT-150;  // start above bottom of map 
 wind = 1.5;
 
 
