@@ -70,10 +70,10 @@ initFu("Digging Caves", 10, function() {
 	
 	AIR = 'rgba(0,0,0,0)';
 	CAVE_FLOOR = '#888';
-	CAVE = '#eee';  // underground AIR
-	GROUND = '#444';
+	CAVE = '#444';  // underground AIR
+	GROUND = '#eee';
 	VEGETATION = '#666';
-	ROCK = '#222'; // unbreakable
+	ROCK = '#aaa'; // unbreakable
 	
 	
 	/***
@@ -128,7 +128,7 @@ initFu("Digging Caves", 10, function() {
 	ctx.clip();
 	
 	ctx.shadowOffsetY = 1;
-	ctx.lineWidth = 12;
+	ctx.lineWidth = 22;
 	ctx.shadowColor = CAVE_FLOOR;
 	ctx.beginPath();
 	ctx.strokeStyle = CAVE;
@@ -242,11 +242,11 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 	x0+=x;
 	ctx.clearRect(x0,y0,w,h);
 	for (var ly=lvlY; ly<lvlY+numRows; ly++) {
-		var prevType = colorToType(lvlX, ly),
+		var prevType = getPattern(lvlX, ly),
 			leftX=0; // beginning of rectangle
 		range(cellsPerRow, function(lx){
 			// find horizontal strips- make rectangles of them
-			var curType = colorToType(lvlX+lx, ly);
+			var curType = getPattern(lvlX+lx, ly);
 			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
 				console.log(curType+" pixel at y="+ly+" x="+(lx+lvlX));
 			}
@@ -282,20 +282,21 @@ initFu("Digging Caves", 10, function() {
 	/****
 	 * Convert from level to canvas fillStyle that will be used to draw to the canvas
 	 */
-	typeMap = {1: '#333', 	//ROCK  #222
-			7: cave_pattern, //CAVE #666
+	typeMap = {
+			7: ground_pattern, // GROUND   
+			5: '#333', 	//ROCK  
 			4: '#7f7', //CAVE_FLOOR #888
-			2: ground_pattern, // GROUND   #444
-			3: grass_pattern,// VEGETATION  #eee 
+			3: grass_pattern,// VEGETATION   
+			2: cave_pattern, //CAVE
 			0: 0// AIR #0000
 	}
-	colorToType = function(x,y) {
+	getCellType = function(x,y) {
 		if (y<0) { 
 			return 0; // above level is only AIR
 		}
 		if (x<0) {
 			if (y>=levelHeight-.2*x) {
-				return ground_pattern; // below level is more ground
+				return 2; // below level is more ground
 			}
 			else {
 				return 0;
@@ -303,14 +304,14 @@ initFu("Digging Caves", 10, function() {
 		}
 		if (x>=levelWidth) {
 			if (y>= levelHeight+.1*(x-levelWidth)) {
-				return ground_pattern;
+				return 2;
 			}
 			else {
 				return 0;
 			}
 		}
 		if (y>=levelHeight) {
-			return ground_pattern;
+			return 2;
 		}
 		var red = levelPixels[(y*levelWidth+x)*4]  // 4 bytes per pixel
 		// red is the "R" in RGBA of the color
@@ -319,8 +320,11 @@ initFu("Digging Caves", 10, function() {
 		//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
 		//that is why not using the lower 5 binary digits 
 		
-		var res = typeMap[red>>5];
-		return res===undefined? grass_pattern : res;
+		return red>>5;
+	}
+	getPattern = function(x,y) {
+		var res = typeMap[getCellType(x,y)] 
+		return res===undefined? 3 : res;
 	}
 
 	scrollBackground(0,0);

@@ -30,7 +30,7 @@ windForce=  function(wind, speed, area) {
 
 
 Player = {
-	pos: vector_create(WIDTH/2, HEIGHT/2),
+	pos: vector_create(800, 1200),   // next position
 	v: vector_create()
 }
 
@@ -42,7 +42,7 @@ jetpack = ParticlePointEmitter(250, {
 	finishColor: [200, 45, 10, 0],
 	finishColorRandom: [40,40,40,0],
 	gravity: vector_create(0,.03),
-	lifeSpan: 1,
+	lifeSpan: 1.2,
 	lifeSpanRandom: 0,
 	positionRandom: vector_create(3,3),
 	sharpness: 12,
@@ -82,7 +82,7 @@ smoke = ParticlePointEmitter(250, {
 	duration: 10,
 	finishColor: [40, 40, 40, 0],
 	finishColorRandom: [10,10,10,0],
-	gravity: vector_create(0,-.03),
+	gravity: vector_create(0,-.05),
 	lifeSpan: .8,
 	lifeSpanRandom: 0.2,
 	positionRandom: vector_create(2,2),
@@ -149,11 +149,11 @@ var animFrame = function(t) {
 
 	var speed = KEYS[SPACE] ? 1.65 : 0.6;
 	if (KEYS[LEFT]) {
-		Player.v.x = max(-12, Player.v.x-speed);
+		Player.v.x = max(-10, Player.v.x-speed);
 		Player.leftFace = true;
 	}
 	else if (KEYS[RIGHT]) {
-		Player.v.x = min(9, Player.v.x+speed);
+		Player.v.x = min(10, Player.v.x+speed);
 		Player.leftFace = false;
 	}
 	else {
@@ -170,7 +170,7 @@ var animFrame = function(t) {
 	var above = Player.pos.y < water_y;
 	Player.v.scale(above? .99 : 0.76) // air or water friction
 	// gravity or jetpack
-	Player.v.y = minmax(-12,22, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
+	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
 	
@@ -196,6 +196,8 @@ var animFrame = function(t) {
 	if (Player.pos.x < -WIDTH) {
 		Player.pos.x = WORLD_WIDTH+WIDTH;
 	} 
+
+	checkPlayerCollision()
 	
 	// no more updates to player pos at this frame - update camera to point to player
 	

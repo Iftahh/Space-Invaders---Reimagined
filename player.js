@@ -53,6 +53,60 @@ draw_man = function(color, v, angle) {
 //	C.fillRect(v.x-1, v.y-1, 3,3)
 }
 
+checkPlayerCollision = function() {
+	// simple collision check
+	if (Player.v.y >= 0) {
+		// check feet collision
+		var cell = getCellType(Player.pos.x / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
+		if (cell >= 5) {
+			// collide
+			Player.v.y *= -.3;
+			Player.pos.y -= Player.pos.y%CELL_SIZE; 
+			Player.v.x *= .8; // friction with ground - for ice do not alter v.x
+		}
+	}
+	else {
+		// check head collision
+		var cell = getCellType(Player.pos.x / CELL_SIZE |0, (Player.pos.y-45)/CELL_SIZE|0)
+		if (cell >= 5) {
+			// collide
+			Player.v.y *= -.3;
+			Player.pos.y += CELL_SIZE-(Player.pos.y%CELL_SIZE);
+			Player.v.x *= .2;
+		}
+	}
+	if (Player.v.x >= 0) {
+		// check right side collision
+		var cell = getCellType((Player.pos.x+10) / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
+		if (cell >= 5) {
+			// collide at feet level - check slightly above and lift if ok
+			var cell = getCellType((Player.pos.x+10) / CELL_SIZE |0, (Player.pos.y-15)/CELL_SIZE|0)
+			if (cell < 5) {
+				Player.pos.y -= CELL_SIZE;
+			}
+			else {
+				Player.v.x *= -.2;
+				Player.pos.x -= Player.pos.x%CELL_SIZE;
+			}
+		}
+	}
+	else {
+		// check left side collision
+		var cell = getCellType((Player.pos.x-10) / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
+		if (cell >= 5) {
+			// collide
+			var cell = getCellType((Player.pos.x-10) / CELL_SIZE |0, (Player.pos.y-15)/CELL_SIZE|0)
+			if (cell < 5) {
+				Player.pos.y -= CELL_SIZE;
+			}
+			else {
+				Player.v.x *= -.2;
+				Player.pos.x += CELL_SIZE-(Player.pos.x%CELL_SIZE);
+			}
+		}
+	}
+}
+
 LEFT = 37;
 RIGHT = 39;
 UP = 38;
