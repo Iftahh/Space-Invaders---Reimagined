@@ -1,5 +1,4 @@
 
-DC = document;
 
 RNG = {
 	setSeed: function(seed) {
@@ -90,9 +89,12 @@ Ctx = function(canvas) {
 	return canvas.getContext('2d')
 }
 
+DC = document;
+
 var cont =  DC.getElementById('canvas_cont');
 range(4, function(i) { 
    var canvas = createCanvas();
+   canvas.style.left = (-WIDTH>>1)+'px';
    cont.appendChild(canvas);
    canvases.push(canvas);
    contexts.push(Ctx(canvas))
@@ -143,6 +145,13 @@ if (!RQ) {
     }
 }
 
+if (DBG) {
+	window.onerror = function(errorMsg, url, lineNumber) {
+	    alert("Error occured: " + errorMsg+"  at line:"+lineNumber);
+		console.warn("Error: "+errorMsg+"\n URL: "+ url+"\n Line: "+lineNumber);
+	    return false;
+	}
+}
 
 // get img data from 
 getPixels= function(ctx) {

@@ -13,7 +13,7 @@ function updateWaves(dt) {
 	     
 	if (mx_v > 1) { 
 		// do some passes where springs pull on their neighbours
-		range(8, function() {
+		range(WAVE_PASSES, function() {
 		    for (var i = 0; i < springs.length; i++)
 		    {
 		        if (i > 0) {
@@ -39,6 +39,10 @@ function updateWaves(dt) {
 }
 
 function renderWater() {
+	if (OffsetY + 2*HEIGHT < water_y) {
+		// no need rendering water if the camera is pointing above it
+		return;
+	}
 	waterCtx.translate(OffsetX, 0);
 	waterCtx.beginPath();
 	waterCtx.moveTo(WIDTH, OffsetY+HEIGHT);

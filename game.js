@@ -44,8 +44,8 @@ jetpack = ParticlePointEmitter(350, {
 	positionRandom: vector_create(4,6),
 	sharpness: 12,
 	sharpnessRandom: 12,
-	size: 20,
-	finishSize: 50,
+	size: 30*SIZE_FACTOR|0,
+	finishSize: 75*SIZE_FACTOR|0,
 	colorEdge: 'rgba(40,20,10,0)',
 	sizeRandom: 4,
 	speed: 4,
@@ -61,7 +61,7 @@ jetpack = ParticlePointEmitter(350, {
 				var x = particle.position.x;
 				smokePar.position.x = x;
 				smokePar.position.y = particle.position.y;
-				var spring = springs[springs.length*(1-x/WIDTH) |0 + irndab(-1,2)];
+				var spring = springs[springs.length*(1-(x-OffsetX)/WIDTH) |0 + irndab(-1,2)];
 				if (spring) {
 					spring.velocity += 1;
 				}
@@ -86,9 +86,9 @@ smoke = ParticlePointEmitter(250, {
 	positionRandom: vector_create(2,2),
 	sharpness: 12,
 	sharpnessRandom: 12,
-	size: 30,
-	finishSize: 40,
-	sizeRandom: 4,
+	size: 45*SIZE_FACTOR|0,
+	finishSize: 60*SIZE_FACTOR|0,
+	sizeRandom: 6,
 	colorEdge: 'transparent',
 	speed: 1,
 	speedRandom: 0,
@@ -143,67 +143,9 @@ var fps = 0; // DBG
 var animFrame = function(t) {
 	var dt = min(3.5, (t - prev_t)/32);
 	prev_t = t;
-	var frameInd = (frameCount/3 |0) % WATER_FRAMES;
+	var frameInd = (frameCount/3 |0) % WATER_FRAMES;  // TODO: anim water frames based on FPS
 
-
-	var speed = KEYS[SPACE] ? 1.65 : 0.6;
-	if (KEYS[LEFT]) {
-		Player.v.x = max(-10, Player.v.x-speed);
-		Player.leftFace = true;
-	}
-	else if (KEYS[RIGHT]) {
-		Player.v.x = min(10, Player.v.x+speed);
-		Player.leftFace = false;
-	}
-	else {
-		Player.leftFace = Player.angle > PI/2 || Player.angle < -PI/2
-	}
-	if (!Player.onGround && Player.inWind) {
-		Player.v.x += windForce(Wind(), Player.v.x, .02);
-	}
-
-	jetpack.active = KEYS[SPACE];
-	var above = Player.pos.y < water_y;
-	Player.v.scale(above? .99 : 0.76) // air or water friction
-
-	// gravity or jetpack  -  higher gravity while "onGround" to allow going down diagonal without hopping
-	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.2 : (Player.onGround ? 0.9 : .5)));
-	var dist = vector_multiply(Player.v, dt)
-	Player.pos.add(dist);
-	
-	
-	if (Player.pos.y > water_y) {
-		if (above) {
-			var x = WIDTH/2;//Player.pos.x;
-//			if (x < WIDTH && x>0)
-				springs[springs.length*(1-x/WIDTH) |0].velocity = 22*Player.v.y;
-			water.active = true;
-			water.position.x = Player.pos.x;
-			water.position.y = Player.pos.y+40;
-			water.speed = 0.75*Player.v.y;
-			water.emissionRate = 20*abs(Player.v.y);
-			//water.angle = Math.atan2(-abs(Player.v.y), 2*Player.v.x) * 180/PI;
-		}
-		if (Player.pos.y> water_y+HEIGHT*.5)
-			Player.pos.y = 0;
-	}
-	if (Player.pos.x > WORLD_WIDTH+WIDTH) {
-		Player.pos.x = -WIDTH;
-	}
-	if (Player.pos.x < -WIDTH) {
-		Player.pos.x = WORLD_WIDTH+WIDTH;
-	} 
-
-	checkPlayerCollision();
-	if (Player.onGround) {
-		 // friction with ground - for ice do not alter v.x
-		if (abs(Player.v.x) < .3) {
-			Player.v.x = 0;
-		}
-		else {
-			Player.v.x *= .8;
-		}
-	}
+	updatePlayer(dt);
 	
 	// no more updates to player pos at this frame - update camera to point to player
 	
@@ -231,7 +173,7 @@ var animFrame = function(t) {
 	spritesCtx.restore()
 	smoke.renderParticles(spritesCtx);
 
-	if (red_man) {
+	if (yellow_man) {
 		Player.angle = Math.atan2(OffsetY+MOUSE_POS.y - Player.pos.y, OffsetX+MOUSE_POS.x - Player.pos.x);
 		draw_man(0, Player.pos, Player.angle);
 	}
@@ -253,7 +195,7 @@ var animFrame = function(t) {
 	}
 
 	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
-	drawToBackBuff(OffsetX/5|0, OffsetY/5|0, 0,0, BB_WIDTH,BB_HEIGHT);
+	drawToBackBuff(OffsetX/CELL_SIZE|0, OffsetY/CELL_SIZE|0, 0,0, BB_WIDTH,BB_HEIGHT);
 	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 	
     RQ(animFrame);

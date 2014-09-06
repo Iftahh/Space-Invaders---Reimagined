@@ -159,35 +159,19 @@ initFu("Digging Caves", 10, function() {
 	
 	//	drawImg(mountainCtx, canvas, 0,0)
 	
-	levelPixels = ctx.getImageData(0,0,levelWidth, levelHeight).data;
+	levelPixels = new Uint8Array(levelWidth*levelHeight);
+	var d = ctx.getImageData(0,0,levelWidth, levelHeight).data;
+	var i=0;
+	range(levelWidth*levelHeight, function(j) {
+		levelPixels[j] = d[i+= 4];
+	});
 
-//		var i=0;
-//		for (var y=0; y<levelHeight; y++) {
-//			var _y = round(HEIGHT*y/levelHeight);
-//			for (var x=0; x<levelWidth; x++) {
-//				var site = {x: round(WIDTH*x/levelWidth) + irndab(-1,2), 
-//							y: _y+irndab(-1,2) 
-//							}
-//					if (pixels[i] > 210 && pixels[i] < 235) {
-//					// AIR
-//					site.c = 0;
-//				}
-//				else  if (pixels[i] > 150 && pixels[i] < 180) {
-//					// dirt
-//					site.c = 1;
-//				}
-//				else if (pixels[i] < 30) {
-//					site.c = 2;
-//				}
-//				else {
-//					i+=4;
-//					continue;
-//				}
-//				//VoronoiDemo.sites.push(site);
-//				i += 4;
-//			}
+//		saveLevelPng = function() {
+//			document.location.href =  level.toDataURL('image/png').replace("image/png", "image/octet-stream")
 //		}
+	level = heights = 0; // free memory
 })
+
 
 
 /*****
@@ -209,7 +193,7 @@ curBackBuffInd = 0;
 
 var _noise = [], NoiseLen=80;
 range(NoiseLen,function() {
-	_noise.push(irndab(-2,3));  // should be at most CELL_SIZE/2
+	_noise.push(irndab(-(CELL_SIZE>>1),1+(CELL_SIZE>>1)));  // should be at most CELL_SIZE/2
 })
 noiseX = function(x,y) {
 	return _noise[abs(x*11+y*3)%NoiseLen]
@@ -320,7 +304,7 @@ initFu("Digging Caves", 10, function() {
 		if (y>=levelHeight) {
 			return 5;
 		}
-		var red = levelPixels[(y*levelWidth+x)*4]  // 4 bytes per pixel
+		var red = levelPixels[y*levelWidth+x]  
 		// red is the "R" in RGBA of the color
 		// for now I'm keeping the other (G,B,A) channels for future use (ie. deadly, hidden passage, etc..)
 		
