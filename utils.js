@@ -91,6 +91,9 @@ Ctx = function(canvas) {
 
 DC = document;
 
+DC.getElementById('overlay').style.width = WIDTH+"px";
+DC.getElementById('overlay').style.left = (-WIDTH>>1)+"px";
+
 var cont =  DC.getElementById('canvas_cont');
 range(4, function(i) { 
    var canvas = createCanvas();
@@ -147,9 +150,14 @@ if (!RQ) {
 
 if (DBG) {
 	window.onerror = function(errorMsg, url, lineNumber) {
-	    alert("Error occured: " + errorMsg+"  at line:"+lineNumber);
+		if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
+			alert("Error occured: " + errorMsg+"  at line:"+lineNumber);
+		}
 		console.warn("Error: "+errorMsg+"\n URL: "+ url+"\n Line: "+lineNumber);
 	    return false;
+	}
+	savePng = function(c) {
+		document.location.href =  c.toDataURL('image/png').replace("image/png", "image/octet-stream")
 	}
 }
 

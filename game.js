@@ -194,9 +194,10 @@ var animFrame = function(t) {
 		water_y = WORLD_HEIGHT-10;
 	}
 
-	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
-	drawToBackBuff(OffsetX/CELL_SIZE|0, OffsetY/CELL_SIZE|0, 0,0, BB_WIDTH,BB_HEIGHT);
-	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
+//	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)	
+//	drawToBackBuff(mountainCtx, OffsetX/CELL_SIZE|0, OffsetY/CELL_SIZE|0, 0,0, BB_WIDTH,BB_HEIGHT);
+	scrollBackground(Player.pos.x, Player.pos.y);
+	
 	
     RQ(animFrame);
     

@@ -166,9 +166,6 @@ initFu("Digging Caves", 10, function() {
 		levelPixels[j] = d[i+= 4];
 	});
 
-//		saveLevelPng = function() {
-//			document.location.href =  level.toDataURL('image/png').replace("image/png", "image/octet-stream")
-//		}
 	level = heights = 0; // free memory
 })
 
@@ -177,7 +174,7 @@ initFu("Digging Caves", 10, function() {
 /*****
  * Backbuffers allow efficient conversion from level to bitmap only when necessary
  */
-PAD = 100; // 100px padding
+PAD = 200; // padding to allow some scroll without any redraw
 BB_WIDTH = WIDTH+2*PAD; // backbuffer width = width+padding from left and right
 BB_HEIGHT = HEIGHT+2*PAD;
 
@@ -208,24 +205,36 @@ noiseY = function(x,y) {
  * Generate textured bitmap from level info
  * -----------------------------------------
  * 
- * lvlX,Y = top left corner in level data
+ * cx,cy = top left corner camera
  * x,y = destination left corner in back buffer
  * w,h = width,height of section in back buffer to draw
  * 
  *  Note: assumes the x,y map to beginning of 4x4 cell (see CELL_SIZE in globals.js)
  * for each pixel in level draw 4x4 cell according to type
  */
-drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
-	var ctx = groundBackCtx[curBackBuffInd],
-		cellsPerRow = 1+w/CELL_SIZE, 
-		numRows = 1+h/CELL_SIZE,
-		x0=lvlX*CELL_SIZE,
-		y0=lvlY*CELL_SIZE,
-		cy=y0+y;
+drawToBackBuff = function(ctx, cx,cy, x,y, w,h) {
+	var cellsPerRow = w/CELL_SIZE|0, 
+		numRows = h/CELL_SIZE|0,
+		lvlX=cx/CELL_SIZE|0,
+		lvlY=cy/CELL_SIZE|0,
+		x0=lvlX*CELL_SIZE,	// how much to offset for patterns to stay at same place
+		y0=lvlY*CELL_SIZE;
 	ctx.save()
-	ctx.translate(-x0,-y0);
+	ctx.translate(-x0,-y0); // need to translate to avoid patterns staying the same place on screen
+//	ctx.clearRect(x0,y0,w,h); // no need clearing here- already cleared all ctx
+	ctx.rect(x0+x,y0+y, w,h);
+	ctx.clip();
+
+	x -= CELL_SIZE;
+	x -= x%CELL_SIZE;
+	y -= CELL_SIZE;
+	y -= y%CELL_SIZE;
+	cellsPerRow+=4;	
+	numRows+=2;
 	x0+=x;
-	ctx.clearRect(x0,y0,w,h);
+	var curY=y0+y;
+
+	
 	for (var ly=lvlY; ly<lvlY+numRows; ly++) {
 		var prevType = getPattern(lvlX, ly),
 			leftX=0; // beginning of rectangle
@@ -233,22 +242,22 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 			// find horizontal strips- make rectangles of them
 			var curType = getPattern(lvlX+lx, ly);
 			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
-				console.log(curType+" pixel at y="+ly+" x="+(lx+lvlX));
+				console.log(curType+" pixel at y="+ly.toFixed(1)+" x="+(lx+lvlX).toFixed(1));
 			}
 			if ((curType != prevType) || lx>=cellsPerRow-1) {
 				if (prevType) {
 					ctx.fillStyle = prevType;
-//					ctx.fillRect(x0+leftX*CELL_SIZE, cy, (lx-leftX)*CELL_SIZE, CELL_SIZE);
-					//console.log("Filling rect at "+(x+leftX*CELL_SIZE)+','+ cy+ ' w:'+((lx-leftX)*CELL_SIZE+ '  color: '+curType));
+//					ctx.fillRect(x0+leftX*CELL_SIZE, curY, (lx-leftX)*CELL_SIZE, CELL_SIZE);
+					//console.log("Filling rect at "+(x+leftX*CELL_SIZE)+','+ curY+ ' w:'+((lx-leftX)*CELL_SIZE+ '  color: '+curType));
 					ctx.beginPath()
-					ctx.moveTo(x0+leftX*CELL_SIZE+noiseX(leftX, ly), cy+noiseY(leftX, ly))
+					ctx.moveTo(x0+leftX*CELL_SIZE+noiseX(leftX, ly), curY+noiseY(leftX, ly))
 					for (var xx=leftX+1; xx<=lx; xx++) {
-						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly), cy+noiseY(xx, ly))
+						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly), curY+noiseY(xx, ly))
 					}
 					xx--;
-					ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+cy+CELL_SIZE+noiseY(xx, ly+1))
+					ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+curY+CELL_SIZE+noiseY(xx, ly+1))
 					for (; xx>=leftX; xx--) {
-						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+cy+CELL_SIZE+noiseY(xx, ly+1))
+						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+curY+CELL_SIZE+noiseY(xx, ly+1))
 					}
 					ctx.closePath();
 					ctx.fill()
@@ -257,7 +266,7 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 			}
 			prevType = curType;
 		})
-		cy += CELL_SIZE;
+		curY += CELL_SIZE;
 	}
 	ctx.restore()
 }
@@ -325,24 +334,32 @@ initFu("Digging Caves", 10, function() {
 
 var lastRenderX = lastRenderY = 10e6,
 
-scrollBackground = function(cx,cy) { // center camera on x,y
-	cx-=BB_WIDTH/2;
-	cy-=BB_WIDTH/2;
-	var lvlX = levelWidth*cx/WORLD_WIDTH |0,
-		lvlY = levelHeight*cy/WORLD_HEIGHT |0,
+scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinates)
+	cx-=BB_WIDTH/2; 	// change to top left corner of back buffer
+	cy-=BB_HEIGHT/2;
+	var ctx = groundBackCtx[curBackBuffInd],
 		dx = cx-lastRenderX,
 		dy = cy-lastRenderY,
 		adx = abs(dx),
 		ady = abs(dy);
+	if (!adx && !ady) {
+		return;
+	}
 	if (adx > BB_WIDTH || ady > BB_HEIGHT) {
+		lastRenderX = cx;
+		lastRenderY = cy;
 		// scrolled too far, can't reuse at all
-		drawToBackBuff(lvlX, lvlY, 0, 0, BB_WIDTH,BB_HEIGHT);
+		drawToBackBuff(ctx, cx, cy, 0, 0, BB_WIDTH,BB_HEIGHT);
 	}
 	else if (adx > PAD || ady > PAD) {
-    	// scrolled too far, must redraw but can reuse some of the old drawn 
-
+		// scrolled too far, must redraw but can reuse some of the old drawn 
+		lastRenderX = cx;
+		lastRenderY = cy;
+		
         // already has image in cache
-        var x,sx, y,sy;
+        var x,sx, y,sy,
+        	screenOffsetX = screenOffsetY = 0;
+
         if (dx < 0) {
             // moved to left - set screen x to dx and source-x to 0
             x = adx;
@@ -363,16 +380,16 @@ scrollBackground = function(cx,cy) { // center camera on x,y
             sy = ady;
             y = 0;
         }
-
+        
         var reuseWidth = BB_WIDTH - adx,
         	reuseHeight = BB_HEIGHT - ady,
 
-        // log("reuse drawing at "+x+", "+y+ "   sxy="+sx+","+sy+ " wh:"+reuseWidth+","+reuseHeight);
         	otherInd = 1-curBackBuffInd,
-        	cachedImage = groundBackBuffs[otherInd],
         	cctx2 = groundBackCtx[otherInd];
 
-        cctx2.drawImage(cachedImage,sx,sy, reuseWidth, reuseHeight,
+        if (DBG) console.log("reuse drawing at "+x.toFixed(1)+", "+y.toFixed(1)+ "   sxy="+sx.toFixed(1)+","+sy.toFixed(1)+ " wh:"+reuseWidth.toFixed(1)+","+reuseHeight.toFixed(1));
+        cctx2.clearRect(0,0,BB_WIDTH, BB_HEIGHT);
+        cctx2.drawImage( groundBackBuffs[curBackBuffInd],sx,sy, reuseWidth, reuseHeight,
             x, y, reuseWidth, reuseHeight);
 
 
@@ -380,39 +397,51 @@ scrollBackground = function(cx,cy) { // center camera on x,y
         
         if (dy < 0) {
             // draw horizontal strip at top of buffer
-            log("1 horiz strip at "+left+", "+top+ "   w,h="+BB_WIDTH+","+ady+ " (top of buffer)");
-            _drawBackground(cctx2, left, top, BB_WIDTH, ady);
+            if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1)+ " (top of buffer)");
+//            _drawBackground(cctx2, left, top,       BB_WIDTH, ady);
+            drawToBackBuff(cctx2, left, top, screenOffsetX, screenOffsetY, BB_WIDTH,ady);
             // the vertical strip should DY down
             screenOffsetY = ady;
             top += ady;
         }
         else {
-            log("2 horiz strip at "+left+", "+(top+BB_HEIGHT-ady)+ "   w,h="+BB_WIDTH+","+ady + " (bottom of buffer)");
+            if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+(top+BB_HEIGHT-ady).toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1) + " (bottom of buffer)");
             // draw horizontal strip at bottom of buffer
             screenOffsetY = BB_HEIGHT-ady;
-            _drawBackground(cctx2, left, top+BB_HEIGHT-ady, BB_WIDTH, ady);
+//            _drawBackground(cctx2, left, top+BB_HEIGHT-ady, BB_WIDTH, ady);
+            drawToBackBuff(cctx2, left, top+BB_HEIGHT-ady, 
+            		screenOffsetX, screenOffsetY,
+            		BB_WIDTH,ady);
             screenOffsetY = 0;
             // the vertical strip should start at top - no need for modifying top or translating context
         }
 
         if (dx < 0) {
-            left -= qcw;
-            log("vert strip at "+left+", "+top+ "   w,h="+adx+","+(BB_HEIGHT-ady) + " (left of buffer)");
+//            left -= PAD;
+            if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (left of buffer)");
             // draw vertical strip on the left of buffer
-            _drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
+            //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
+            drawToBackBuff(cctx2, left, top,
+            		screenOffsetX, screenOffsetY,
+            		adx, BB_HEIGHT-ady);
         }
         else {
-            left -= adx;
-            log("vert strip at "+left+", "+top+ "   w,h="+adx+","+(BB_HEIGHT-ady) + " (right of buffer)");
+            left += BB_WIDTH-adx;
+            if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (right of buffer)");
             // draw vertical strip on the right of buffer
             screenOffsetX = BB_WIDTH-adx;
-            _drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
+            //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
+            drawToBackBuff(cctx2, left, top, 
+            		screenOffsetX, screenOffsetY,
+            		adx, BB_HEIGHT-ady);
         }
 
-		lastRenderX = x;
-		lastRenderY = y;
 
         curBackBuffInd = otherInd;
     }
+	
+	
+	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
+	mountainCtx.drawImage(groundBackBuffs[curBackBuffInd], PAD+dx, PAD+dy, WIDTH, HEIGHT, 0,0, WIDTH,HEIGHT)
 }
 

@@ -4,15 +4,15 @@ DBG = true; // change to false before release!
 
 // patterns dimensions: - smaller is more repetitions, larger is more memory consumption
 sky_width = 250;  		   // width of sky pattern
-ground_pattern_size = 400; // size of pattern (with&height) for ground   
-WATER_FRAMES = 10;         // number of frames in water animation - more for smoother animation but more memory and slower startup
+ground_pattern_size = 400; // size of pattern (width&height) for ground   
+WATER_FRAMES = DBG?2:10;         // number of frames in water animation - more for smoother animation but more memory and slower startup
 WAVE_PASSES = 8;		   // more passes - smoother waves, more cpu  		
 
 //level map dimensions - will be scaled xCELL_SIZE for actual background canvas
 levelWidth = 2048; // must be power of 2 for fractal mountain
 levelHeight = 1000;
 
-// These will change below to fit in screen
+// These will change below to fit inside screen
 CELL_SIZE = 7;
 WIDTH = 10e6;
 HEIGHT = 0;
