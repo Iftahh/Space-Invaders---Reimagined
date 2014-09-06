@@ -139,18 +139,23 @@ checkPlayerCollision = function() {
 	}
 }
 
-LEFT = 37;
-RIGHT = 39;
-UP = 38;
-DOWN = 40;
-SPACE = 32;
-var KEYS={}
+var SPACE = 32
+	KEYS={},
 
-var updateFromKeys = function(e) {
+updateFromKeys = function(e) {
     KEYS[e.keyCode]=  e.type == "keydown";
     if (e.keyCode == 32 || e.keyCode >=37 && e.keyCoe <= 40)
         e.preventDefault();
+},
+isLeftPressed = function() {
+	return KEYS[37] || // left arrow
+	 	 KEYS[65] || KEYS[83]  // 'a' or 's';
+},
+isRightPressed = function() {
+	return KEYS[39]  || // right arrow
+		KEYS[68] || KEYS[70]  // 'd' or 'f'
 }
+
 DC.addEventListener('keydown', updateFromKeys)
 DC.addEventListener('keyup', updateFromKeys)
 
@@ -165,11 +170,11 @@ updatePlayer = function(dt) {
 		AIR_FRICTION = .99;
 	
 	var speed = KEYS[SPACE] ? 1.65 : 0.6;
-	if (KEYS[LEFT]) {
+	if (isLeftPressed()) {
 		Player.v.x = max(-10, Player.v.x-speed);
 		Player.leftFace = true;
 	}
-	else if (KEYS[RIGHT]) {
+	else if (isRightPressed()) {
 		Player.v.x = min(10, Player.v.x+speed);
 		Player.leftFace = false;
 	}

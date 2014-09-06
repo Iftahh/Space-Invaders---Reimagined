@@ -212,13 +212,13 @@ noiseY = function(x,y) {
  *  Note: assumes the x,y map to beginning of 4x4 cell (see CELL_SIZE in globals.js)
  * for each pixel in level draw 4x4 cell according to type
  */
-drawToBackBuff = function(ctx, cx,cy, x,y, w,h) {
+drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
 	var cellsPerRow = w/CELL_SIZE|0, 
 		numRows = h/CELL_SIZE|0,
 		lvlX=cx/CELL_SIZE|0,
 		lvlY=cy/CELL_SIZE|0,
-		x0=lvlX*CELL_SIZE,	// how much to offset for patterns to stay at same place
-		y0=lvlY*CELL_SIZE;
+		x0=ax,//lvlX*CELL_SIZE,	// how much to offset for patterns to stay at same place
+		y0=ay;////lvlY*CELL_SIZE;
 	ctx.save()
 	ctx.translate(-x0,-y0); // need to translate to avoid patterns staying the same place on screen
 //	ctx.clearRect(x0,y0,w,h); // no need clearing here- already cleared all ctx
@@ -349,7 +349,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
 		lastRenderX = cx;
 		lastRenderY = cy;
 		// scrolled too far, can't reuse at all
-		drawToBackBuff(ctx, cx, cy, 0, 0, BB_WIDTH,BB_HEIGHT);
+		drawToBackBuff(ctx, cx, cy, 0, 0, BB_WIDTH,BB_HEIGHT, cx,cy);
 	}
 	else if (adx > PAD || ady > PAD) {
 		// scrolled too far, must redraw but can reuse some of the old drawn 
@@ -358,7 +358,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
 		
         // already has image in cache
         var x,sx, y,sy,
-        	screenOffsetX = screenOffsetY = 0;
+        	screenOffsetY = 0;
 
         if (dx < 0) {
             // moved to left - set screen x to dx and source-x to 0
@@ -399,7 +399,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
             // draw horizontal strip at top of buffer
             if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1)+ " (top of buffer)");
 //            _drawBackground(cctx2, left, top,       BB_WIDTH, ady);
-            drawToBackBuff(cctx2, left, top, screenOffsetX, screenOffsetY, BB_WIDTH,ady);
+            drawToBackBuff(cctx2, left, top, 0, 0, BB_WIDTH,ady, cx,cy);
             // the vertical strip should DY down
             screenOffsetY = ady;
             top += ady;
@@ -407,12 +407,10 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
         else {
             if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+(top+BB_HEIGHT-ady).toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1) + " (bottom of buffer)");
             // draw horizontal strip at bottom of buffer
-            screenOffsetY = BB_HEIGHT-ady;
 //            _drawBackground(cctx2, left, top+BB_HEIGHT-ady, BB_WIDTH, ady);
             drawToBackBuff(cctx2, left, top+BB_HEIGHT-ady, 
-            		screenOffsetX, screenOffsetY,
-            		BB_WIDTH,ady);
-            screenOffsetY = 0;
+            		0, BB_HEIGHT-ady,
+            		BB_WIDTH,ady, cx,cy);
             // the vertical strip should start at top - no need for modifying top or translating context
         }
 
@@ -422,26 +420,25 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
             // draw vertical strip on the left of buffer
             //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
             drawToBackBuff(cctx2, left, top,
-            		screenOffsetX, screenOffsetY,
-            		adx, BB_HEIGHT-ady);
+            		0, screenOffsetY,
+            		adx, BB_HEIGHT-ady, cx,cy);
         }
         else {
             left += BB_WIDTH-adx;
             if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (right of buffer)");
             // draw vertical strip on the right of buffer
-            screenOffsetX = BB_WIDTH-adx;
             //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
             drawToBackBuff(cctx2, left, top, 
-            		screenOffsetX, screenOffsetY,
-            		adx, BB_HEIGHT-ady);
+            		BB_WIDTH-adx, screenOffsetY,
+            		adx, BB_HEIGHT-ady, cx,cy);
         }
 
 
         curBackBuffInd = otherInd;
         dx=dy=0;
     }
-		mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
-//	mountainCtx.globalCompositeOperation = 'source-in'; 
+	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
+//	mountainCtx.globalCompositeOperation = 'copy'; 
 	mountainCtx.drawImage(groundBackBuffs[curBackBuffInd], PAD+dx, PAD+dy, WIDTH, HEIGHT, 0,0, WIDTH,HEIGHT)
 }
 
