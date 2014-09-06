@@ -115,8 +115,8 @@ ParticlePointEmitter = function(maxParticles, options) {
 		        positionRandom:  vector_create(12, 12),
 		        gravity:  vector_create( 0.0, 0.3),
 		
-		        elapsedTime: 0,
-		        duration: -1,
+		        elapsedTime: 0, // used to count active time - only when duration > 0
+		        duration: -1,   // autostop the emitter after this duration (-1 = infinity)
 		        emissionRate:0,
 		        emitCounter: 0,
 		
@@ -216,9 +216,11 @@ ParticlePointEmitter = function(maxParticles, options) {
 					this.addParticle(this.position.x, this.position.y);
 					this.emitCounter -= rate;
 				}
-				this.elapsedTime += delta;
-				if( this.duration != -1 && this.duration < this.elapsedTime ){
-					this.stopParticleEmitter();
+				if( this.duration != -1) {
+					this.elapsedTime += delta;
+					if (this.duration < this.elapsedTime ){
+						this.stopParticleEmitter();
+					}
 				}
 			}
 	

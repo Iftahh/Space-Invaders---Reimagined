@@ -20,7 +20,8 @@ var t0 = -1;
 var prevFrameInd;
 waterCtx.globalAlpha = 0.9;
 
-WIND = function() {return wind; }
+PWind = function() {return Player.inWind ? wind : 0; }
+Wind = function() {return wind }
 
 // based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
 windForce=  function(wind, speed, area) {
@@ -29,22 +30,18 @@ windForce=  function(wind, speed, area) {
 }
 
 
-Player = {
-	pos: vector_create(800, 1200),   // next position
-	v: vector_create()
-}
 
-jetpack = ParticlePointEmitter(250, {
-	position: vector_create(WIDTH/2, HEIGHT/2),
+jetpack = ParticlePointEmitter(350, {
+	position: vector_create(),
 	angle: 90,
 	angleRandom: 10,
 	duration: -1,
 	finishColor: [200, 45, 10, 0],
 	finishColorRandom: [40,40,40,0],
 	gravity: vector_create(0,.03),
-	lifeSpan: 1.2,
+	lifeSpan: 1,
 	lifeSpanRandom: 0,
-	positionRandom: vector_create(3,3),
+	positionRandom: vector_create(4,6),
 	sharpness: 12,
 	sharpnessRandom: 12,
 	size: 20,
@@ -53,6 +50,7 @@ jetpack = ParticlePointEmitter(250, {
 	sizeRandom: 4,
 	speed: 4,
 	speedRandom: 1,
+	emissionRate: 140,
 	startColor: [220, 188, 88, 1],
 	startColorRandom: [32, 35, 38, 0],
 	updateParticle: function(particle) {
@@ -70,7 +68,7 @@ jetpack = ParticlePointEmitter(250, {
 			}
 		}
 	},
-	wind: WIND,
+	wind: PWind,
 	area: 0.1
 });
 
@@ -82,7 +80,7 @@ smoke = ParticlePointEmitter(250, {
 	duration: 10,
 	finishColor: [40, 40, 40, 0],
 	finishColorRandom: [10,10,10,0],
-	gravity: vector_create(0,-.05),
+	gravity: vector_create(0,-.25),
 	lifeSpan: .8,
 	lifeSpanRandom: 0.2,
 	positionRandom: vector_create(2,2),
@@ -96,7 +94,7 @@ smoke = ParticlePointEmitter(250, {
 	speedRandom: 0,
 	startColor: [220, 220, 220, 1],
 	startColorRandom: [22, 22, 22, 0],
-	wind: WIND,
+	wind: Wind,
 	area: 0.8
 });
 
@@ -129,7 +127,7 @@ water = ParticlePointEmitter(250, {
 			particle.timeToLive = 0;
 		}
 	},
-	wind: WIND,
+	wind: Wind,
 	area: 0.05
 });
 
@@ -140,11 +138,12 @@ water = ParticlePointEmitter(250, {
 
 
 var prev_t = 0;
+var fps = 0; // DBG
 
 var animFrame = function(t) {
 	var dt = min(3.5, (t - prev_t)/32);
 	prev_t = t;
-	var frameInd = (frameCount/6 |0) % WATER_FRAMES;
+	var frameInd = (frameCount/3 |0) % WATER_FRAMES;
 
 
 	var speed = KEYS[SPACE] ? 1.65 : 0.6;
@@ -159,29 +158,27 @@ var animFrame = function(t) {
 	else {
 		Player.leftFace = Player.angle > PI/2 || Player.angle < -PI/2
 	}
-	Player.v.x += windForce(WIND(), Player.v.x, .02);
-//	if (KEYS[UP]) {
-//		Player.v.y = max(-3, Player.v.y-.1);
-//	}
-//	if (KEYS[DOWN]) {
-//		Player.v.y = min(3, Player.v.y+.1);
-//	}
+	if (!Player.onGround && Player.inWind) {
+		Player.v.x += windForce(Wind(), Player.v.x, .02);
+	}
+
 	jetpack.active = KEYS[SPACE];
 	var above = Player.pos.y < water_y;
 	Player.v.scale(above? .99 : 0.76) // air or water friction
-	// gravity or jetpack
-	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.2 : .5));
+
+	// gravity or jetpack  -  higher gravity while "onGround" to allow going down diagonal without hopping
+	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.2 : (Player.onGround ? 0.9 : .5)));
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
 	
 	
 	if (Player.pos.y > water_y) {
 		if (above) {
-			var x = Player.pos.x;
-			if (x < WIDTH && x>0)
+			var x = WIDTH/2;//Player.pos.x;
+//			if (x < WIDTH && x>0)
 				springs[springs.length*(1-x/WIDTH) |0].velocity = 22*Player.v.y;
 			water.active = true;
-			water.position.x = x;
+			water.position.x = Player.pos.x;
 			water.position.y = Player.pos.y+40;
 			water.speed = 0.75*Player.v.y;
 			water.emissionRate = 20*abs(Player.v.y);
@@ -197,7 +194,16 @@ var animFrame = function(t) {
 		Player.pos.x = WORLD_WIDTH+WIDTH;
 	} 
 
-	checkPlayerCollision()
+	checkPlayerCollision();
+	if (Player.onGround) {
+		 // friction with ground - for ice do not alter v.x
+		if (abs(Player.v.x) < .3) {
+			Player.v.x = 0;
+		}
+		else {
+			Player.v.x *= .8;
+		}
+	}
 	
 	// no more updates to player pos at this frame - update camera to point to player
 	
@@ -206,10 +212,10 @@ var animFrame = function(t) {
 	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY)
 
-	jetpack.position.x = Player.pos.x; // WIDTH/2-(Player.leftFace ? 5: 15);
-	jetpack.position.y = Player.pos.y; //HEIGHT/2-25;
+	jetpack.position.x = Player.pos.x -(Player.leftFace ? 5: 15);
+	jetpack.position.y = Player.pos.y-25;
 	
-	updateWater(dt);
+	updateWaves(dt);
 	jetpack.update(dt);
 	smoke.update(dt);
 	water.update(dt);
@@ -246,47 +252,29 @@ var animFrame = function(t) {
 		water_y = WORLD_HEIGHT-10;
 	}
 
-//	var dx=dy = 0;
-//	if (MOUSE_POS.x > WIDTH - 20 && OffsetX < CELL_SIZE*levelWidth-WIDTH) {
-//		dx = 5;
-//	}
-//	if (MOUSE_POS.x < 20 && OffsetX > 0) {
-//		dx = -5;
-//	}
-//	if (MOUSE_POS.y > HEIGHT - 20 && OffsetY < CELL_SIZE*levelHeight-HEIGHT) {
-//		dy = 5;
-//	}
-//	if (MOUSE_POS.y < 20 && OffsetY > 0) {
-//		dy = -5;
-//	}
-//	if (dx || dy) {
-//		OffsetX += dx;
-//		OffsetY += dy;
-//		mountainCtx.translate(-dx, -dy);
-//		mountainCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT)
-//		drawImg(mountainCtx, level, 0,0)
-		mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
-		drawToBackBuff(OffsetX/5|0, OffsetY/5|0, 0,0, BB_WIDTH,BB_HEIGHT);
-		drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
-
-	//}
+	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
+	drawToBackBuff(OffsetX/5|0, OffsetY/5|0, 0,0, BB_WIDTH,BB_HEIGHT);
+	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 	
     RQ(animFrame);
     
-    // TODO: remove later
     frameCount++;
+    // TODO: remove later
     if (DBG) {
     	mountainCtx.font="20px Verdana";
     	mountainCtx.fillStyle = '#fff';
     	text= "Wind: "+wind;
-    	text+= "  Player: "+Player.pos.x.toFixed(2)+","+Player.pos.y.toFixed(2);
-		if (t - t0 > 10000) {
+    	text+= "  Player: "+Player.pos.x.toFixed(0)+","+Player.pos.y.toFixed(0);
+    	text+= "  V: "+Player.v.x.toFixed(1)+","+Player.v.y.toFixed(1);
+		if (t - t0 > 5000) {
 			t0 = t;
 			//wind = rndab(-10,10)
 			//console.log((frameCount-prevCount)/10, " avg FPS, wind:", wind);
-			text += "  FPS: "+(frameCount-prevCount)/10
+			fps = (frameCount-prevCount)/5
 			prevCount = frameCount;
 		}
+		text += " fire: "+jetpack.particles.length;
+		text += "  FPS: "+fps.toFixed(1)
 		mountainCtx.fillText(text, 10,50);
     }
 };

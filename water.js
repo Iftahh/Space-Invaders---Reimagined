@@ -1,5 +1,5 @@
 
-function updateWater(dt) {
+function updateWaves(dt) {
 	var Spread = 0.25;
 	
 	var mx_v = 0;
@@ -148,7 +148,7 @@ water_frames = [];
 range(WATER_FRAMES, function(i) {
 	initFu("Waving waves", 3, (function(_i) {
 			return function() {
-				water_frames[_i] = waterCtx.createPattern(water_canvas(_i * TPI/WATER_FRAMES), 'no-repeat');
+				water_frames[_i] = waterCtx.createPattern(water_canvas(_i * TPI/WATER_FRAMES), 'repeat');
 			}
 		})(i)
 	)

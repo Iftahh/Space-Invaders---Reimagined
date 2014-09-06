@@ -68,6 +68,7 @@ initFu("Digging Caves", 10, function() {
 	
 	// these colors in level indicate what kind of cell to draw in background canvas
 	
+	
 	AIR = 'rgba(0,0,0,0)';
 	CAVE_FLOOR = '#888';
 	CAVE = '#444';  // underground AIR
@@ -211,10 +212,10 @@ range(NoiseLen,function() {
 	_noise.push(irndab(-2,3));  // should be at most CELL_SIZE/2
 })
 noiseX = function(x,y) {
-	return _noise[(x*11+y*3)%NoiseLen]
+	return _noise[abs(x*11+y*3)%NoiseLen]
 }
 noiseY = function(x,y) {
-	return _noise[(x*9+y*7)%NoiseLen]
+	return _noise[abs(x*9+y*7)%NoiseLen]
 }
 
 /*************************************************
@@ -262,13 +263,13 @@ drawToBackBuff = function(lvlX, lvlY, x,y, w,h) {
 					}
 					xx--;
 					ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+cy+CELL_SIZE+noiseY(xx, ly+1))
-					for (var xx=lx; xx>=leftX; xx--) {
+					for (; xx>=leftX; xx--) {
 						ctx.lineTo(x0+xx*CELL_SIZE+noiseX(xx, ly+1), 1+cy+CELL_SIZE+noiseY(xx, ly+1))
 					}
 					ctx.closePath();
 					ctx.fill()
 				}
-				leftX = lx+1;
+				leftX = lx;
 			}
 			prevType = curType;
 		})
@@ -285,7 +286,7 @@ initFu("Digging Caves", 10, function() {
 	typeMap = {
 			7: ground_pattern, // GROUND   
 			5: '#333', 	//ROCK  
-			4: '#7f7', //CAVE_FLOOR #888
+			4: '#777', //CAVE_FLOOR #888
 			3: grass_pattern,// VEGETATION   
 			2: cave_pattern, //CAVE
 			0: 0// AIR #0000
@@ -295,23 +296,29 @@ initFu("Digging Caves", 10, function() {
 			return 0; // above level is only AIR
 		}
 		if (x<0) {
-			if (y>=levelHeight-.2*x) {
-				return 2; // below level is more ground
+			if (y>=levelHeight-.4*x) {
+				if (y>=levelHeight-.4*x+2) {
+					return 5; // below level is more ground
+				}
+				return 7;
 			}
 			else {
 				return 0;
 			}
 		}
 		if (x>=levelWidth) {
-			if (y>= levelHeight+.1*(x-levelWidth)) {
-				return 2;
+			if (y>= levelHeight+.4*(x-levelWidth)) {
+				if (y>= levelHeight+.4*(x-levelWidth)+2) {
+					return 5;
+				}
+				return 7;
 			}
 			else {
 				return 0;
 			}
 		}
 		if (y>=levelHeight) {
-			return 2;
+			return 5;
 		}
 		var red = levelPixels[(y*levelWidth+x)*4]  // 4 bytes per pixel
 		// red is the "R" in RGBA of the color

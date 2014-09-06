@@ -1,4 +1,10 @@
 
+Player = {
+	pos: vector_create(250, 4500),   // start position
+	v: vector_create()
+}
+
+
 
 yellow_man = red_man = 0;
 
@@ -53,29 +59,16 @@ draw_man = function(color, v, angle) {
 //	C.fillRect(v.x-1, v.y-1, 3,3)
 }
 
+// hack to keep on the ground few ticks even when in air
+var leftGround = 0; 
+/***
+ * Updates player location/speed for collision with mountain
+ * @returns True if standing on ground (colliding down feet-floor)
+ */
 checkPlayerCollision = function() {
+	Player.inWind = 0 == getCellType(Player.pos.x / CELL_SIZE|0, (Player.pos.y-15)/CELL_SIZE|0);
 	// simple collision check
-	if (Player.v.y >= 0) {
-		// check feet collision
-		var cell = getCellType(Player.pos.x / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
-		if (cell >= 5) {
-			// collide
-			Player.v.y *= -.3;
-			Player.pos.y -= Player.pos.y%CELL_SIZE; 
-			Player.v.x *= .8; // friction with ground - for ice do not alter v.x
-		}
-	}
-	else {
-		// check head collision
-		var cell = getCellType(Player.pos.x / CELL_SIZE |0, (Player.pos.y-45)/CELL_SIZE|0)
-		if (cell >= 5) {
-			// collide
-			Player.v.y *= -.3;
-			Player.pos.y += CELL_SIZE-(Player.pos.y%CELL_SIZE);
-			Player.v.x *= .2;
-		}
-	}
-	if (Player.v.x >= 0) {
+	if (Player.v.x > 0) {
 		// check right side collision
 		var cell = getCellType((Player.pos.x+10) / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
 		if (cell >= 5) {
@@ -90,7 +83,7 @@ checkPlayerCollision = function() {
 			}
 		}
 	}
-	else {
+	if (Player.v.x < 0) {
 		// check left side collision
 		var cell = getCellType((Player.pos.x-10) / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
 		if (cell >= 5) {
@@ -104,6 +97,41 @@ checkPlayerCollision = function() {
 				Player.pos.x += CELL_SIZE-(Player.pos.x%CELL_SIZE);
 			}
 		}
+	}
+	if (Player.v.y < 0) {
+		// check head collision
+		var cell = getCellType(Player.pos.x / CELL_SIZE |0, (Player.pos.y-45)/CELL_SIZE|0)
+		if (cell >= 5) {
+			// collide
+			if (Player.v.y > -.3) {
+				Player.v.y = 0;
+			}
+			else {
+				Player.v.y *= -.3;
+			}
+			Player.pos.y += CELL_SIZE-(Player.pos.y%CELL_SIZE);
+			Player.v.x *= .2;
+		}
+	}
+	if (Player.v.y > 0) {
+		// check feet collision
+		var cell = getCellType(Player.pos.x / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
+		if (cell >= 5) {
+			// collide
+			if (Player.v.y < .3) {
+				Player.v.y = 0;
+			}
+			else {
+				Player.v.y *= -.3;
+			}
+			Player.pos.y -= Player.pos.y%CELL_SIZE; 
+			Player.onGround =  true;
+			leftGround = 0;
+			return;
+		}
+	}
+	if (leftGround++ > 6) {
+		Player.onGround = false;
 	}
 }
 
