@@ -327,8 +327,8 @@ initFu("Digging Caves", 10, function() {
 		return res===undefined? 3 : res;
 	}
 
-	scrollBackground(0,0);
-	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
+//	scrollBackground(0,0);
+//	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
 })
 
 
@@ -438,10 +438,10 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
 
 
         curBackBuffInd = otherInd;
+        dx=dy=0;
     }
-	
-	
-	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
+		mountainCtx.clearRect(0,0,WIDTH,HEIGHT)
+//	mountainCtx.globalCompositeOperation = 'source-in'; 
 	mountainCtx.drawImage(groundBackBuffs[curBackBuffInd], PAD+dx, PAD+dy, WIDTH, HEIGHT, 0,0, WIDTH,HEIGHT)
 }
 
