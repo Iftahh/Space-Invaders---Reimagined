@@ -1,33 +1,23 @@
 
 
 
-MOUSE_POS = {x:0, y:0}
-rect = canvases[1].getBoundingClientRect();
-canvases[canvases.length-1].addEventListener('mousemove', function(evt) {
-	MOUSE_POS = {
-      x: evt.clientX - rect.left,
-      y: evt.clientY - rect.top
-    };
-}, false);
-
-	
-
-frameCount = 0;
-
-var prevCount = frameCount;
-var t0 = -1;
-
-var prevFrameInd;
 waterCtx.globalAlpha = 0.9;
 
-PWind = function() {return Player.inWind ? wind : 0; }
-Wind = function() {return wind }
+var frameCount = 0,
+
+	prevCount = frameCount,
+	t0 = -1,
+
+	prevFrameInd,
+
+	PWind = function() {return Player.inWind ? wind : 0; },
+	Wind = function() {return wind },
 
 // based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
 windForce=  function(wind, speed, area) {
 	var dv = wind - speed;
 	return minmax(-10,10, abs(dv)*dv*area);
-}
+},
 
 
 
@@ -56,21 +46,39 @@ jetpack = ParticlePointEmitter(350, {
 	updateParticle: function(particle) {
 		if (particle.position.y > water_y) {
 			particle.timeToLive = 0;
-			var smokePar = smoke.addParticle();
+			var smokePar = smoke.addParticle(particle.position.x, particle.position.y);
 			if (smokePar) {
 				var x = particle.position.x;
-				smokePar.position.x = x;
-				smokePar.position.y = particle.position.y;
 				var spring = springs[springs.length*(1-(x-OffsetX)/WIDTH) |0 + irndab(-1,2)];
 				if (spring) {
 					spring.velocity += 1;
 				}
 			}
 		}
+		else {
+			// check collision
+			var cell = getCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0)
+			if (cell == 3) {// vegetation
+				particle.timeToLive = 0;
+				smoke.addParticle(particle.position.x, particle.position.y);
+				// TODO: burn vegetation
+				//setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, 1);
+//				drawToBackBuff(
+//						groundBackCtx[curBackBuffInd], 
+//						particle.position.x-20, particle.position.y-20, 
+//						particle.position.x-OffsetX+PAD/2, particle.position.y-OffsetY+PAD/2, 
+//						40,40, 
+//						Player.pos.x - BB_WIDTH/2, Player.pos.y - BB_HEIGHT/2);
+			}
+			else if (cell > 4) {
+				// bounce - assuming hit with floor/ceiling - flip v.y
+				particle.direction.y *= -1;
+			}
+		}
 	},
 	wind: PWind,
 	area: 0.1
-});
+}),
 
 smoke = ParticlePointEmitter(250, {
 	active:false,
@@ -96,7 +104,7 @@ smoke = ParticlePointEmitter(250, {
 	startColorRandom: [22, 22, 22, 0],
 	wind: Wind,
 	area: 0.8
-});
+}),
 
 
 water = ParticlePointEmitter(250, {
@@ -129,7 +137,7 @@ water = ParticlePointEmitter(250, {
 	},
 	wind: Wind,
 	area: 0.05
-});
+}),
 
 //waterY = function(x) {
 //	var m = (x%WATER_SPRING_DX)/WATER_SPRING_DX;
@@ -137,10 +145,10 @@ water = ParticlePointEmitter(250, {
 //}
 
 
-var prev_t = 0;
-var fps = 0; // DBG
+prev_t = 0,
+fps = 0, // DBG
 
-var animFrame = function(t) {
+animFrame = function(t) {
 	var dt = min(3.5, (t - prev_t)/32);
 	prev_t = t;
 	var frameInd = (frameCount/3 |0) % WATER_FRAMES;  // TODO: anim water frames based on FPS
@@ -220,15 +228,10 @@ var animFrame = function(t) {
 		text += "  FPS: "+fps.toFixed(1)
 		mountainCtx.fillText(text, 10,50);
     }
-};
+},
 
-initFu("Ready!", 10, function() {
-	DC.getElementById('overlay').style.display = "none"; // TODO: add class for fade transition
-	RQ(animFrame);
-})
-
-progress = 0;
-var initialize = function() {
+progress = 0,
+initialize = function() {
 	if (initQueue.length == 0)
 		return;
 	var todo = initQueue.shift();
@@ -236,11 +239,20 @@ var initialize = function() {
 	var pg = todo[1];
 	DC.getElementById("text").textContent= text;
 	progress+=pg;
-	console.log("Progress: "+progress+"  text: "+text+"  "+Date())
-	if (DBG && progress > 100) alert("prgs at "+progress+" text is "+text);
+	if (DBG) {
+		console.log("Progress: "+progress+"  text: "+text+"  "+Date())
+		if (progress > 100) alert("prgs at "+progress+" text is "+text);
+	}
 	DC.getElementById('pbar-in').style.width = (progress*2)+'px'
 
 	todo[2]();
 	setTimeout(initialize, todo[3] || 0);
-}
+};
+
+
+initFu("Ready!", 10, function() {
+	DC.getElementById('overlay').style.display = "none"; // TODO: add class for fade transition
+	RQ(animFrame);
+})
+
 initialize();

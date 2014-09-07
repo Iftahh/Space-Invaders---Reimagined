@@ -1,3 +1,4 @@
+var sky_canvas;
 
 initFu("Painting Sky", 5, function() {
 	
@@ -25,4 +26,5 @@ initFu("Painting Sky", 5, function() {
 	skyCtx.fillStyle = skyCtx.createPattern(sky_canvas, 'repeat-x');;
 	skyCtx.fillRect(0,0,WIDTH,HEIGHT);
 
+	// TODO: move water wave form here
 }, DBG?0:1000)

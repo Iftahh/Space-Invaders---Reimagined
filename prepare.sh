@@ -4,7 +4,7 @@ rm -f js13.zip
 
 # order matters!
 echo "(function() {" > all.js
-cat ../globals.js >> all.js
+cat ../globals.js | sed 's/DBG = true;/DBG = false;/' >> all.js
 cat ../utils.js >> all.js
 cat ../gfx_utils.js >> all.js
 cat ../particle.js >> all.js

@@ -1,7 +1,13 @@
-var SZ = ground_pattern_size;
-var TXT = "Chiseling rocks"
+var SZ = ground_pattern_size,
+	TXT = "Chiseling rocks",
+	cave_canvas,
+	grass_pattern,
+	ground_canvas,
+	ground_pattern,
+	cave_pattern,
+	cave_ctx,
 
-var renderByRGB = function( red, green, blue) {
+renderByRGB = function( red, green, blue) {
 	return render2pixels(SZ, SZ, function(d) {
 	    var i=0; // pixel index
 	    duRange(SZ, SZ, function(x,y) {
@@ -11,7 +17,7 @@ var renderByRGB = function( red, green, blue) {
 			d[i++] = U8;
 	    });
 	})
-} 
+} ;
 
 initFu(TXT, 10, function() {
 

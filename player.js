@@ -1,30 +1,31 @@
 
-Player = {
+var Player = {
 	pos: vector_create(50*CELL_SIZE, 900*CELL_SIZE),   // start position
 	v: vector_create()
-}
+},
 
 
 
-yellow_man = red_man = 0;
-MAN_IMG_SIZE = 64*SIZE_FACTOR |0
+yellow_man = red_man = 0,
+MAN_IMG_SIZE = 64*SIZE_FACTOR |0,
 
-man_canvas = createCanvas(2*MAN_IMG_SIZE, MAN_IMG_SIZE);
+man_canvas = createCanvas(2*MAN_IMG_SIZE, MAN_IMG_SIZE),
 
-var	ctx=Ctx(man_canvas),
+ctx=Ctx(man_canvas),
 	manImage = new Image();
+
 manImage.onload = function() {
   ctx.drawImage(manImage, 0, 0, 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
   yellow_man = createCanvas( 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
 //  red_man = createCanvas( 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
 //  var rctx = Ctx(red_man);
-  var bctx = Ctx(yellow_man);
-  var pixels = ctx.getImageData(0,0, 2*MAN_IMG_SIZE,MAN_IMG_SIZE).data;
-//  var redid = rctx.createImageData( 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
-  var yellowid = bctx.createImageData( 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
-//  var red = redid.data;
-  var yellow = yellowid.data;
-  var i=0;
+  var bctx = Ctx(yellow_man),
+  	pixels = ctx.getImageData(0,0, 2*MAN_IMG_SIZE,MAN_IMG_SIZE).data,
+//  redid = rctx.createImageData( 2*MAN_IMG_SIZE,MAN_IMG_SIZE),
+  	yellowid = bctx.createImageData( 2*MAN_IMG_SIZE,MAN_IMG_SIZE),
+//  red = redid.data,
+  	yellow = yellowid.data,
+  	i=0;
   duRange( 2*MAN_IMG_SIZE,MAN_IMG_SIZE, function() {
 //	  red[i] = 
 		  yellow[i] = pixels[i];
@@ -40,12 +41,12 @@ manImage.onload = function() {
 	  i++;
   });
 //  rctx.putImageData(redid,0,0)
-  bctx.putImageData(yellowid,0,0)
+  bctx.putImageData(yellowid,0,0);
 };
 manImage.src = './man.gif';
 
 
-draw_man = function(color, v, angle) {
+var draw_man = function(color, v, angle) {
 	var man = color ? red_man: yellow_man;
 	spritesCtx.save();
 	spritesCtx.translate(v.x-MAN_IMG_SIZE/2,v.y-MAN_IMG_SIZE);
@@ -61,10 +62,10 @@ draw_man = function(color, v, angle) {
 	spritesCtx.restore();
 //	C.fillStyle= "#f00";
 //	C.fillRect(v.x-1, v.y-1, 3,3)
-}
+},
 
 // hack to keep on the ground few ticks even when in air
-var leftGround = 0; 
+ leftGround = 0, 
 /***
  * Updates player location/speed for collision with mountain
  * @returns True if standing on ground (colliding down feet-floor)
@@ -137,10 +138,10 @@ checkPlayerCollision = function() {
 	if (leftGround++ > 6) {
 		Player.onGround = false;
 	}
-}
+},
 
-var SPACE = 32
-	KEYS={},
+SPACE = 32
+KEYS={},
 
 updateFromKeys = function(e) {
     KEYS[e.keyCode]=  e.type == "keydown";
@@ -154,7 +155,7 @@ isLeftPressed = function() {
 isRightPressed = function() {
 	return KEYS[39]  || // right arrow
 		KEYS[68] || KEYS[70]  // 'd' or 'f'
-}
+};
 
 DC.addEventListener('keydown', updateFromKeys)
 DC.addEventListener('keyup', updateFromKeys)
@@ -162,6 +163,22 @@ DC.addEventListener('keyup', updateFromKeys)
 DC.body.addEventListener('touchmove', function(event) {
     event.preventDefault();
 }, false);
+
+var MOUSE_POS = {x:0, y:0},
+rect = canvases[1].getBoundingClientRect();
+canvases[canvases.length-1].addEventListener('mousemove', function(evt) {
+	MOUSE_POS = {
+      x: evt.clientX - rect.left,
+      y: evt.clientY - rect.top
+    };
+}, false);
+
+canvases[canvases.length-1].addEventListener('onmousedown', function(evt) {
+	
+})
+
+var last = [],
+	laserGraveyard = [],
 
 
 

@@ -1,6 +1,6 @@
 
 
-RNG = {
+var RNG = {
 	setSeed: function(seed) {
 	    seed = (seed < 1 ? 1/seed : seed);
 	
@@ -22,7 +22,7 @@ RNG = {
     _s2: 0,
     _c: 0,
     _frac: 2.3283064365386963e-10 /* 2^-32 */
-}
+},
 
 /**
  * @returns {float} Pseudorandom value [0,1), uniformly distributed
@@ -39,17 +39,17 @@ rnd= function() {
 
 RNG.setSeed(5)
 
-range = function(maxInt,iterFu) {
+var range = function(maxInt,iterFu) {
     for (var i=0; i<maxInt; i++)
         iterFu(i)
-}
+},
 // breaking-range - will return non-false value from iterator and break the loop
 brrange = function(maxInt,iterFu) {
     for (var i=0; i<maxInt; i++) {
         var res = iterFu(i)
         if (res) return res;
     }
-}
+},
 
 // return non-false value from iterator will break the loop
 each = function(collection, iterFu) {
@@ -60,15 +60,15 @@ each = function(collection, iterFu) {
         	return;
         }
     }
-}
+},
 
-minmax = function(mn, mx, v) { return min(mx, max(mn, v))}
+minmax = function(mn, mx, v) { return min(mx, max(mn, v))},
 
 duRange = function(w,h, fu) {
 	for (var y=0; y<h; y++)
 		for (var x=0; x<w; x++)
 			fu(x,y);
-}
+},
 
 
 createCanvas = function(w,h) {
@@ -76,18 +76,18 @@ createCanvas = function(w,h) {
 	  c.width = w || WIDTH;
 	  c.height = h || HEIGHT;
 	  return c;
-	}
+	},
 
-avg = function(a,b) { return (a+b)/2 }
+avg = function(a,b) { return (a+b)/2 },
 
 // LAYERS
-canvases = [];
-contexts = [];
+canvases = [],
+contexts = [],
 
 
 Ctx = function(canvas) {
 	return canvas.getContext('2d')
-}
+},
 
 DC = document;
 
@@ -105,38 +105,38 @@ range(4, function(i) {
 
  // current canvas to draw to - may toggle around for double buffering
 
-skyCtx = contexts[0]
-mountainCtx = contexts[1]
-spritesCtx = contexts[2]
-waterCtx = contexts[3]
+var skyCtx = contexts[0],
+mountainCtx = contexts[1],
+spritesCtx = contexts[2],
+waterCtx = contexts[3],
 // Overlay context (overlay)
 
 
-abs = Math.abs;
-min = Math.min;
-max = Math.max;
-sin= Math.sin;
-round = Math.round;
-sqrt=Math.sqrt;
-sq=function(x){return x*x}
-U8 = 255; // max unsigned 8bit
-PI = Math.PI;
-TPI = 2*PI;
+abs = Math.abs,
+min = Math.min,
+max = Math.max,
+sin= Math.sin,
+round = Math.round,
+sqrt=Math.sqrt,
+sq=function(x){return x*x},
+U8 = 255, // max unsigned 8bit
+PI = Math.PI,
+TPI = 2*PI,
 
 
 // random in range [0,a)
-rnda = function(a) { return rnd()*a}
+rnda = function(a) { return rnd()*a},
 // random integer in range [0,a-1]
-irnda = function(a) { return rnda(a)|0}
+irnda = function(a) { return rnda(a)|0},
 // random in range [a,b)
-rndab = function(a,b) { return a+rnda(b-a)}
+rndab = function(a,b) { return a+rnda(b-a)},
 // random integer in range [a,b-1] 
-irndab = function(a,b) { return rndab(a,b)|0 }
+irndab = function(a,b) { return rndab(a,b)|0 },
 
 
 // polyfill RequestAnimFrame
-suffix = 'equestAnimationFrame';
-RQ= window['r'+suffix] || window['mozR'+suffix] || window['webkitR'+suffix]
+suffix = 'equestAnimationFrame',
+RQ= window['r'+suffix] || window['mozR'+suffix] || window['webkitR'+suffix];
 if (!RQ) {
     var lastTime = 0;
     RQ = function(callback) {
@@ -162,27 +162,27 @@ if (DBG) {
 }
 
 // get img data from 
-getPixels= function(ctx) {
+var getPixels= function(ctx) {
   return ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);
-}
+},
 
 
-var render2pixels=function(width, height, renderFunction) {
+render2pixels=function(width, height, renderFunction) {
 	var canvas = createCanvas(width, height), ctx=Ctx(canvas)
 		imgData=getPixels(ctx),
 	    d = imgData.data;
 	renderFunction(d,ctx,canvas);
     ctx.putImageData(imgData,0,0);
 	return canvas;
-}
+},
 
 drawImg = function(ctx, img, x,y) {
 	ctx.drawImage(img, x,y, img.width, img.height);
-}
+},
 
 
 
-initQueue = []
+initQueue = [],
 initFu = function(text, pg, fu, dl) {
 	initQueue.push([text,pg,fu, dl])
 }

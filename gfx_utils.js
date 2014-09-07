@@ -17,7 +17,7 @@ var painty = function(buffer, width,height, base_min, base_top, mndirx,mxdirx, m
 		}
 	}
 	return fu;
-}
+},
 
 
 rgb2hsv = function(r,g,b) {
@@ -58,7 +58,7 @@ rgb2hsv = function(r,g,b) {
         s: s,
         v: v
     };
-}
+},
 
 hsv2rgb = function(h, s, v) {
     if (s === undefined) {
@@ -83,7 +83,7 @@ hsv2rgb = function(h, s, v) {
         g: (g * U8)|0,
         b: (b * U8)|0
     };
-}
+},
 
 applyHSVFilter = function(ctx, fu) {
 	var pixels = getPixels(ctx),
@@ -98,11 +98,11 @@ applyHSVFilter = function(ctx, fu) {
 		i++;
 	})
 	ctx.putImageData(pixels,0,0)
-}
+},
 
 
 // displace bitmap pixels
-function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
+displace = function(displace_x, displace_y, pixel_data, new_data, width, height) {
 	var di = 0; // destination index
 	var i=0;
 	var w20 = 20*width;
@@ -118,7 +118,7 @@ function displace(displace_x, displace_y, pixel_data, new_data, width, height) {
 		new_data[di++] = pixel_data[oi++];
 		new_data[di++] = pixel_data[oi];
 	})
-}
+},
 
 
 
@@ -185,7 +185,7 @@ _convulate = function(pixels, dst, weights) {
       dst[dstOff++] = b;
       dst[dstOff++] = U8;//a + alphaFac*(255-a);
   })
-}
+},
 
 convolute = function(ctxIn, ctxOut, weights) {
   var  pixels = getPixels(ctxIn),
@@ -196,7 +196,7 @@ convolute = function(ctxIn, ctxOut, weights) {
 	  return output;
   }
   ctxOut.putImageData(output, 0, 0)
-}
+},
 
 
 
@@ -243,4 +243,4 @@ emboss = function(ctx) {
 	// draw the top-left lighter
 	ctx.globalCompositeOperation = "lighter";
 	ctx.drawImage(edges1,0,0,w,h);
-}
+};

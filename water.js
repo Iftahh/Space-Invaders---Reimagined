@@ -1,17 +1,17 @@
 
-function updateWaves(dt) {
-	var Spread = 0.25;
-	
-	var mx_v = 0;
+var updateWaves = function(dt) {
+	var Spread = 0.25,
+		mx_v = 0;
+
 	each(springs, function($) {
 		updateSpring($, dt, 0.04, 0.025, water_y);
 		mx_v = max(mx_v, abs($.velocity))
 	})
 	 
-	var leftDeltas = [];
-	var rightDeltas = [];
 	     
 	if (mx_v > 1) { 
+		var leftDeltas = [],
+		rightDeltas = [];
 		// do some passes where springs pull on their neighbours
 		range(WAVE_PASSES, function() {
 		    for (var i = 0; i < springs.length; i++)
@@ -36,9 +36,9 @@ function updateWaves(dt) {
 		    }
 		})
 	}
-}
+},
 
-function renderWater() {
+renderWater = function() {
 	if (OffsetY + 2*HEIGHT < water_y) {
 		// no need rendering water if the camera is pointing above it
 		return;
@@ -60,7 +60,9 @@ function renderWater() {
 	waterCtx.fill();
 	waterCtx.strokeStyle = "#eef";
 	waterCtx.stroke()
-}
+},
+
+waterPixels;
 
 initFu("Raining water", 3, function() {
 
@@ -99,9 +101,9 @@ initFu("Raining water", 3, function() {
 			      .1, .1, .1 ]
 			);
 	waterPixels = res;
-}, 1200)
+}, 1200);
 
-water_canvas = function(P) {
+var water_canvas = function(P) {
 	return render2pixels(WIDTH, HEIGHT, function(d) {
 	    
 	    var displace_x = [];
@@ -145,7 +147,7 @@ water_canvas = function(P) {
 //		  	}
 //		  }
 		})
-}
+},
 
 water_frames = [];
 
@@ -157,25 +159,24 @@ range(WATER_FRAMES, function(i) {
 		})(i)
 	)
 })
-initFu("Waving waves", 0, function() {waterPixels = null;}) // clean memory
+initFu("Waving waves", 1, function() {waterPixels = null;}) // clean memory
 
 
 //based on water tutorial 
 //http://gamedevelopment.tutsplus.com/tutorials/make-a-splash-with-dynamic-2d-water-effects--gamedev-236
 
-function updateSpring(spring, dt, tension, damping, target_height) {
+var updateSpring = function(spring, dt, tension, damping, target_height) {
 	var x = spring.height - target_height;
 	var acceleration = -tension * x -damping*spring.velocity;
 	
 	spring.velocity += dt*acceleration;
 	spring.height += spring.velocity*dt;
-}
+},
 
 
-WATER_SPRING_DX = 10; // water spring every 10 pixels
+WATER_SPRING_DX = 10, // water spring every 10 pixels
 
-
-var springs = [];
+springs = [];
 range(WIDTH/WATER_SPRING_DX+1, function() {
 	springs.push({
 		height: water_y,

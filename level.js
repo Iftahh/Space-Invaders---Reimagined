@@ -1,3 +1,12 @@
+var levelPixels,
+
+//these colors in level indicate what kind of cell to draw in background canvas
+AIR = 'rgba(0,0,0,0)',
+CAVE_FLOOR = '#888',
+CAVE = '#444',  // underground AIR
+GROUND = '#eee',
+VEGETATION = '#666',
+ROCK = '#aaa'; // unbreakable
 
 
 
@@ -13,7 +22,7 @@ initFu("Digging Caves", 10, function() {
 	 * fill1DFractArray - Tessalate an array of values into an
 	 * approximation of fractal Brownian motion.
 	 */
-	fill1DFractArray =function(heights, heightScale, h) {
+	var fill1DFractArray =function(heights, heightScale, h) {
 	
 	
 		/*
@@ -31,8 +40,8 @@ initFu("Digging Caves", 10, function() {
 	    /* subSize is the dimension of the array in terms of connected line
 	       segments, while size is the dimension in terms of number of
 	       vertices. */
-		var size = heights.length-1;
-	    var subSize = size;
+		var size = heights.length-1,
+	    	subSize = size;
 	    size++;
 	    
 		/* Set up our roughness constants.
@@ -41,13 +50,13 @@ initFu("Digging Caves", 10, function() {
 		   'ratio' is multiplied by 'scale' after each iteration
 		   to effectively reduce the randum number range.
 		   */
-		var ratio = Math.pow (2, -h);
-		var scale = heightScale * ratio;
+		var ratio = Math.pow (2, -h),
+			scale = heightScale * ratio,
 		
 	
 	    /* Seed the endpoints of the array. To enable seamless wrapping,
 	       the endpoints need to be the same point. */
-	    var stride = subSize / 2;
+	       stride = subSize / 2;
 	    heights[0] = heights[subSize] = 0;
 	
 	    while (stride) {
@@ -64,26 +73,12 @@ initFu("Digging Caves", 10, function() {
 	
 	
 	
-	level_img = createCanvas(levelWidth, levelHeight);
-	
-	// these colors in level indicate what kind of cell to draw in background canvas
-	
-	
-	AIR = 'rgba(0,0,0,0)';
-	CAVE_FLOOR = '#888';
-	CAVE = '#444';  // underground AIR
-	GROUND = '#eee';
-	VEGETATION = '#666';
-	ROCK = '#aaa'; // unbreakable
-	
-	
 	/***
 	 * Generate level map by drawing different colors in a small canvas
 	 * see constants above
 	 */
-	level = createCanvas(levelWidth, levelHeight);
-	
-	var ctx = Ctx(level);
+	var level = createCanvas(levelWidth, levelHeight),
+		ctx = Ctx(level);
 	
 	
 	ctx.fillStyle = AIR;
@@ -105,7 +100,7 @@ initFu("Digging Caves", 10, function() {
 	//ctx.strokeText(T,levelWidth/2, levelHeight - 250);
 	
 	// fractal mountain
-	heights = []
+	var heights = [];
 	heights[levelWidth] = 0;
 	fill1DFractArray(heights, levelHeight*1.5, .7);
 	
@@ -160,13 +155,11 @@ initFu("Digging Caves", 10, function() {
 	//	drawImg(mountainCtx, canvas, 0,0)
 	
 	levelPixels = new Uint8Array(levelWidth*levelHeight);
-	var d = ctx.getImageData(0,0,levelWidth, levelHeight).data;
-	var i=0;
+	var d = ctx.getImageData(0,0,levelWidth, levelHeight).data,
+		i=0;
 	range(levelWidth*levelHeight, function(j) {
 		levelPixels[j] = d[i+= 4];
 	});
-
-	level = heights = 0; // free memory
 })
 
 
@@ -174,30 +167,31 @@ initFu("Digging Caves", 10, function() {
 /*****
  * Backbuffers allow efficient conversion from level to bitmap only when necessary
  */
-PAD = 200; // padding to allow some scroll without any redraw
-BB_WIDTH = WIDTH+2*PAD; // backbuffer width = width+padding from left and right
-BB_HEIGHT = HEIGHT+2*PAD;
+var PAD = 200, // padding to allow some scroll without any redraw
+BB_WIDTH = WIDTH+2*PAD, // backbuffer width = width+padding from left and right
+BB_HEIGHT = HEIGHT+2*PAD,
+_noise = [], NoiseLen=80,
+curBackBuffInd = 0,
+groundBackBuffs = [],
+groundBackCtx = [],
+noiseX = function(x,y) {
+	return _noise[abs(x*11+y*3)%NoiseLen]
+},
+noiseY = function(x,y) {
+	return _noise[abs(x*9+y*7)%NoiseLen]
+}
 
-groundBackBuffs = [];
-groundBackCtx = [];
+
 range(2, function() {
 	var canv = createCanvas(BB_WIDTH, BB_HEIGHT);
 	groundBackBuffs.push(canv);
 	groundBackCtx.push(canv.getContext('2d'))
 })
 
-curBackBuffInd = 0;
 
-var _noise = [], NoiseLen=80;
 range(NoiseLen,function() {
 	_noise.push(irndab(-(CELL_SIZE>>1),1+(CELL_SIZE>>1)));  // should be at most CELL_SIZE/2
 })
-noiseX = function(x,y) {
-	return _noise[abs(x*11+y*3)%NoiseLen]
-}
-noiseY = function(x,y) {
-	return _noise[abs(x*9+y*7)%NoiseLen]
-}
 
 /*************************************************
  * drawToBackBuff
@@ -212,7 +206,7 @@ noiseY = function(x,y) {
  *  Note: assumes the x,y map to beginning of 4x4 cell (see CELL_SIZE in globals.js)
  * for each pixel in level draw 4x4 cell according to type
  */
-drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
+var drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
 	var cellsPerRow = w/CELL_SIZE|0, 
 		numRows = h/CELL_SIZE|0,
 		lvlX=cx/CELL_SIZE|0,
@@ -269,70 +263,73 @@ drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
 		curY += CELL_SIZE;
 	}
 	ctx.restore()
+},
+
+/****
+ * Convert from level to canvas fillStyle that will be used to draw to the canvas
+ */
+ typeMap = {},
+setCellType = function(x,y,t) {
+	levelPixels[y*levelWidth+x]  = t;
+},
+getCellType = function(x,y) {
+	if (y<0) { 
+		return 0; // above level is only AIR
+	}
+	if (x<0) {
+		if (y>=levelHeight-.4*x) {
+			if (y>=levelHeight-.4*x+2) {
+				return 5; // below level is more ground
+			}
+			return 7;
+		}
+		else {
+			return 0;
+		}
+	}
+	if (x>=levelWidth) {
+		if (y>= levelHeight+.4*(x-levelWidth)) {
+			if (y>= levelHeight+.4*(x-levelWidth)+2) {
+				return 5;
+			}
+			return 7;
+		}
+		else {
+			return 0;
+		}
+	}
+	if (y>=levelHeight) {
+		return 5;
+	}
+	var red = levelPixels[y*levelWidth+x]  
+	// red is the "R" in RGBA of the color
+	// for now I'm keeping the other (G,B,A) channels for future use (ie. deadly, hidden passage, etc..)
+	
+	//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
+	//that is why not using the lower 5 binary digits 
+	
+	return red>>5;
+},
+getPattern = function(x,y) {
+	var res = typeMap[getCellType(x,y)] 
+	return res===undefined? 3 : res;
 }
 
 initFu("Digging Caves", 10, function() {
-
-	/****
-	 * Convert from level to canvas fillStyle that will be used to draw to the canvas
-	 */
 	typeMap = {
-			7: ground_pattern, // GROUND   
-			5: '#333', 	//ROCK  
-			4: '#777', //CAVE_FLOOR #888
-			3: grass_pattern,// VEGETATION   
-			2: cave_pattern, //CAVE
-			0: 0// AIR #0000
+		7: ground_pattern, // GROUND   
+		5: '#333', 	//ROCK  
+		4: '#777', //CAVE_FLOOR #888
+		3: grass_pattern,// VEGETATION   
+		2: cave_pattern, //CAVE
+		1: '#111', // burned tree
+		0: 0// AIR #0000
 	}
-	getCellType = function(x,y) {
-		if (y<0) { 
-			return 0; // above level is only AIR
-		}
-		if (x<0) {
-			if (y>=levelHeight-.4*x) {
-				if (y>=levelHeight-.4*x+2) {
-					return 5; // below level is more ground
-				}
-				return 7;
-			}
-			else {
-				return 0;
-			}
-		}
-		if (x>=levelWidth) {
-			if (y>= levelHeight+.4*(x-levelWidth)) {
-				if (y>= levelHeight+.4*(x-levelWidth)+2) {
-					return 5;
-				}
-				return 7;
-			}
-			else {
-				return 0;
-			}
-		}
-		if (y>=levelHeight) {
-			return 5;
-		}
-		var red = levelPixels[y*levelWidth+x]  
-		// red is the "R" in RGBA of the color
-		// for now I'm keeping the other (G,B,A) channels for future use (ie. deadly, hidden passage, etc..)
-		
-		//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
-		//that is why not using the lower 5 binary digits 
-		
-		return red>>5;
-	}
-	getPattern = function(x,y) {
-		var res = typeMap[getCellType(x,y)] 
-		return res===undefined? 3 : res;
-	}
+	
+	// TODO: move water waving here to use time
+});
 
-//	scrollBackground(0,0);
-//	drawImg(mountainCtx, groundBackBuffs[curBackBuffInd], 0,0)
-})
-
-
-var lastRenderX = lastRenderY = 10e6,
+lastRenderX = lastRenderY = 10e6,
 
 scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinates)
 	cx-=BB_WIDTH/2; 	// change to top left corner of back buffer

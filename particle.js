@@ -12,26 +12,26 @@
 
 
 /* Vector Helper */
-vector_create=function( x, y ){
+var vector_create=function( x, y ){
     return {x:x || 0,y: y || 0,
     	scale: function(s) { this.x *= s; this.y *= s},
     	add: function(v) {this.x += v.x; this.y += v.y}
 //    	,len2: function() {return sq(this.x)+sq(this.y)}
     }
-}
+},
 
 vector_multiply= function( vector, scaleFactor ){
     return vector_create(vector.x * scaleFactor,
             vector.y * scaleFactor);
-}
+},
 vector_add = function( vector1, vector2 ){
     return vector_create(vector1.x + vector2.x,
             vector1.y + vector2.y);
-}
+},
 vector_sub = function (vector1, vector2) {
     return vector_create(vector1.x - vector2.x,
             vector1.y - vector2.y);
-}
+},
 //vector_len2= function(vector) {
 //    return sq(vector.x) + sq(vector.y);
 //}
@@ -65,7 +65,7 @@ Particle = function() {
 		  	context.fillRect( x, y, size, size );
 	    }
 	}
-}
+},
 
 
 
