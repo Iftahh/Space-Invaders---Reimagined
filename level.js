@@ -326,7 +326,7 @@ initFu("Digging Caves", 10, function() {
 		0: 0// AIR #0000
 	}
 	
-	// TODO: move water waving here to use time
+	addWaveFrame()
 });
 
 lastRenderX = lastRenderY = 10e6,

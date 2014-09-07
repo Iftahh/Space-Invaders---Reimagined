@@ -46,7 +46,7 @@ WORLD_HEIGHT = CELL_SIZE * levelHeight;
 // globals
 var water_y = WORLD_HEIGHT-150,  // start above bottom of map 
 	wind = 1.5,
-
+	water_frames = [],
 
 //var fcurCameraX, fcurCameraY; //  fcur-camera defines what is being viewed - needed to be float in order not to lock
 	OffsetX = OffsetY = 0; //  is the integer round of fcur - needed to be int in order to avoid fuzzy drawimage for images

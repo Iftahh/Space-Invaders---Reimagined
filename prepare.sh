@@ -10,9 +10,9 @@ cat ../gfx_utils.js >> all.js
 cat ../particle.js >> all.js
 cat ../player.js >> all.js
 cat ../sky.js >> all.js
-cat ../water.js >> all.js
 cat ../ground.js >> all.js
 cat ../level.js >> all.js
+cat ../water.js >> all.js
 cat ../game.js >> all.js
 
 echo "})()" >> all.js

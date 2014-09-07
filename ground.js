@@ -54,7 +54,9 @@ initFu(TXT, 6, function() {
 			     .1, .1, .1 ]
 			);
 	})
-}, 100);
+	
+	addWaveFrame()
+});
 
 
 //drawImg(mountainCtx, cave_canvas, 0,0);
@@ -79,5 +81,6 @@ initFu(TXT, 3, function() {
 
 	cave_canvas = ground_canvas =ground_ctx= cave_ctx= 0; // free mem
 
-}, 100);
+	addWaveFrame()
+});
 

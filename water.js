@@ -62,10 +62,8 @@ renderWater = function() {
 	waterCtx.stroke()
 },
 
-waterPixels;
-
-initFu("Raining water", 3, function() {
-
+waterPixels,
+initWaterPixels = function() {
 	waterPixels=[];
 	//var red = painty([], 60,110, -2,2, 1,4, -4, 100);
 	//var green = painty([], 80,160, -2,2, 1,4, -2, 500);
@@ -101,7 +99,12 @@ initFu("Raining water", 3, function() {
 			      .1, .1, .1 ]
 			);
 	waterPixels = res;
-}, 1200);
+}
+addWaveFrame = function() {
+	if (!waterPixels) { initWaterPixels(); }
+	water_frames.push(waterCtx.createPattern(water_canvas(water_frames.length * TPI/WATER_FRAMES), 'repeat'));
+}
+
 
 var water_canvas = function(P) {
 	return render2pixels(WIDTH, HEIGHT, function(d) {
@@ -147,17 +150,14 @@ var water_canvas = function(P) {
 //		  	}
 //		  }
 		})
-},
+};
 
-water_frames = [];
-
-range(WATER_FRAMES, function(i) {
-	initFu("Waving waves", 3, (function(_i) {
-			return function() {
-				water_frames[_i] = waterCtx.createPattern(water_canvas(_i * TPI/WATER_FRAMES), 'repeat');
-			}
-		})(i)
-	)
+range(WATER_FRAMES-water_frames.length, function(i) {
+	initFu("Waving waves", 3, function() {
+		if (water_frames.length < WATER_FRAMES) {
+			addWaveFrame()
+		}
+	})
 })
 initFu("Waving waves", 1, function() {waterPixels = null;}) // clean memory
 
