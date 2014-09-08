@@ -2,10 +2,22 @@ var SZ = ground_pattern_size,
 	TXT = "Chiseling rocks",
 	cave_canvas,
 	grass_pattern,
+	burned_grass_pattern,
 	ground_canvas,
 	ground_pattern,
 	cave_pattern,
 	cave_ctx,
+	shiftHSV = function(h,s,v) {
+		return function(hsv) {
+			// some pixels are not brownish despite the shift!
+			// not sure why, maybe some overflow?  for now use the min(.4) hack - 
+			// the hack produces bright green pixels instead of blue, still bad but not too much
+			var rgb = hsv2rgb(avg(min(hsv.h,.4), h), avg(hsv.s, s), avg(hsv.v, v))
+			
+			return rgb;
+		}
+	},
+
 
 renderByRGB = function( red, green, blue) {
 	return render2pixels(SZ, SZ, function(d) {
@@ -34,6 +46,13 @@ initFu(TXT, 10, function() {
 
 	// global
 	grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat');
+	
+	grass_ctx = Ctx(grass_canvas)
+	applyHSVFilter(grass_ctx, function(hsv) {
+		var rgb = hsv2rgb(hsv.h, hsv.s*.2, hsv.v*.4)
+		return rgb;
+	})
+	burned_grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat')
 });
 
 // drawImg(mountainCtx, cave_canvas, 0,0);
@@ -61,16 +80,6 @@ initFu(TXT, 6, function() {
 
 //drawImg(mountainCtx, cave_canvas, 0,0);
 initFu(TXT, 3, function() {
-	var shiftHSV = function(h,s,v) {
-		return function(hsv) {
-			// some pixels are not brownish despite the shift!
-			// not sure why, maybe some overflow?  for now use the min(.4) hack - 
-			// the hack produces bright green pixels instead of blue, still bad but not too much
-			var rgb = hsv2rgb(avg(min(hsv.h,.4), h), avg(hsv.s, s), avg(hsv.v, v))
-			
-			return rgb;
-		}
-	}
 	
 	emboss(ground_ctx);
 	applyHSVFilter(ground_ctx, shiftHSV(.1, .76, .34))

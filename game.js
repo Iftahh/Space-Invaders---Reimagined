@@ -62,13 +62,15 @@ jetpack = ParticlePointEmitter(350, {
 				particle.timeToLive = 0;
 				smoke.addParticle(particle.position.x, particle.position.y);
 				// TODO: burn vegetation
-				//setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, 1);
-//				drawToBackBuff(
-//						groundBackCtx[curBackBuffInd], 
-//						particle.position.x-20, particle.position.y-20, 
-//						particle.position.x-OffsetX+PAD/2, particle.position.y-OffsetY+PAD/2, 
-//						40,40, 
-//						Player.pos.x - BB_WIDTH/2, Player.pos.y - BB_HEIGHT/2);
+				setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, rnd()<.8? 32 : 0);
+
+//				groundBackCtx[curBackBuffInd].clearRect(particle.position.x - lastRenderX -CELL_SIZE,particle.position.y - lastRenderY -CELL_SIZE, 2*CELL_SIZE-2, 2*CELL_SIZE-2)
+//				drawToBackBuff(groundBackCtx[curBackBuffInd], particle.position.x - CELL_SIZE, particle.position.y -CELL_SIZE, 
+//						particle.position.x - lastRenderX -CELL_SIZE,particle.position.y - lastRenderY -CELL_SIZE, 2*CELL_SIZE,2*CELL_SIZE, 
+//						lastRenderX,
+//						lastRenderY);
+
+				
 			}
 			else if (cell > 4) {
 				// bounce - assuming hit with floor/ceiling - flip v.y
@@ -202,8 +204,13 @@ animFrame = function(t) {
 		water_y = WORLD_HEIGHT-10;
 	}
 
+
+//	groundBackCtx[curBackBuffInd].fillStyle = "#f00";
+//	groundBackCtx[curBackBuffInd].fillRect(Player.pos.x - lastRenderX -1, Player.pos.y -lastRenderY -1, 3,3);
+
 //	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)	
 //	drawToBackBuff(mountainCtx, OffsetX/CELL_SIZE|0, OffsetY/CELL_SIZE|0, 0,0, BB_WIDTH,BB_HEIGHT);
+	redrawDirty();
 	scrollBackground(Player.pos.x, Player.pos.y);
 	
 	

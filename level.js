@@ -88,7 +88,7 @@ initFu("Digging Caves", 10, function() {
 	ctx.shadowColor = VEGETATION;
 	ctx.shadowBlur = 0;
 	ctx.shadowOffsetX = 0;
-	ctx.shadowOffsetY = -8;
+	ctx.shadowOffsetY = -14;
 	ctx.fillStyle = GROUND;
 	
 	//	ctx.textAlign = 'center';
@@ -206,13 +206,13 @@ range(NoiseLen,function() {
  *  Note: assumes the x,y map to beginning of 4x4 cell (see CELL_SIZE in globals.js)
  * for each pixel in level draw 4x4 cell according to type
  */
-var drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
+var drawToBackBuff = function(ctx, cx,cy, x,y, w,h) {
 	var cellsPerRow = w/CELL_SIZE|0, 
 		numRows = h/CELL_SIZE|0,
 		lvlX=cx/CELL_SIZE|0,
 		lvlY=cy/CELL_SIZE|0,
-		x0=ax,//lvlX*CELL_SIZE,	// how much to offset for patterns to stay at same place
-		y0=ay;////lvlY*CELL_SIZE;
+		x0=lastRenderX,//lvlX*CELL_SIZE,	// how much to offset for patterns to stay at same place
+		y0=lastRenderY;////lvlY*CELL_SIZE;
 	ctx.save()
 	ctx.translate(-x0,-y0); // need to translate to avoid patterns staying the same place on screen
 //	ctx.clearRect(x0,y0,w,h); // no need clearing here- already cleared all ctx
@@ -227,7 +227,6 @@ var drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
 	numRows+=2;
 	x0+=x;
 	var curY=y0+y;
-
 	
 	for (var ly=lvlY; ly<lvlY+numRows; ly++) {
 		var prevType = getPattern(lvlX, ly),
@@ -269,8 +268,27 @@ var drawToBackBuff = function(ctx, cx,cy, x,y, w,h, ax,ay) {
  * Convert from level to canvas fillStyle that will be used to draw to the canvas
  */
  typeMap = {},
+ minDirtyX=minDirtyY=10e6,
+ maxDirtyX=maxDirtyY=-10e6,
 setCellType = function(x,y,t) {
 	levelPixels[y*levelWidth+x]  = t;
+	x*=CELL_SIZE;
+	y*=CELL_SIZE;
+	minDirtyX = min(minDirtyX, x-CELL_SIZE*2);
+	minDirtyY = min(minDirtyY, y-CELL_SIZE*2);
+	maxDirtyX = max(maxDirtyX, x+CELL_SIZE*2);
+	maxDirtyY = max(maxDirtyY, y+CELL_SIZE*2);
+},
+redrawDirty = function() {
+	if (minDirtyX < 10e6) {
+		groundBackCtx[curBackBuffInd].clearRect(minDirtyX - lastRenderX, minDirtyY - lastRenderY, maxDirtyX-minDirtyX-2, maxDirtyY-minDirtyY-2)
+		drawToBackBuff(groundBackCtx[curBackBuffInd], 
+				minDirtyX, minDirtyY, 
+				minDirtyX - lastRenderX-1, minDirtyY - lastRenderY-1,  maxDirtyX-minDirtyX, maxDirtyY-minDirtyY);
+		
+		minDirtyX=minDirtyY=10e6;
+		maxDirtyX=maxDirtyY=-10e6;
+	}
 },
 getCellType = function(x,y) {
 	if (y<0) { 
@@ -312,7 +330,7 @@ getCellType = function(x,y) {
 },
 getPattern = function(x,y) {
 	var res = typeMap[getCellType(x,y)] 
-	return res===undefined? 3 : res;
+	return res===undefined? 4 : res;
 }
 
 initFu("Digging Caves", 10, function() {
@@ -322,7 +340,7 @@ initFu("Digging Caves", 10, function() {
 		4: '#777', //CAVE_FLOOR #888
 		3: grass_pattern,// VEGETATION   
 		2: cave_pattern, //CAVE
-		1: '#111', // burned tree
+		1: burned_grass_pattern, // burned tree
 		0: 0// AIR #0000
 	}
 	
@@ -346,7 +364,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
 		lastRenderX = cx;
 		lastRenderY = cy;
 		// scrolled too far, can't reuse at all
-		drawToBackBuff(ctx, cx, cy, 0, 0, BB_WIDTH,BB_HEIGHT, cx,cy);
+		drawToBackBuff(ctx, cx, cy, 0, 0, BB_WIDTH,BB_HEIGHT);
 	}
 	else if (adx > PAD || ady > PAD) {
 		// scrolled too far, must redraw but can reuse some of the old drawn 
@@ -396,7 +414,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
             // draw horizontal strip at top of buffer
             if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1)+ " (top of buffer)");
 //            _drawBackground(cctx2, left, top,       BB_WIDTH, ady);
-            drawToBackBuff(cctx2, left, top, 0, 0, BB_WIDTH,ady, cx,cy);
+            drawToBackBuff(cctx2, left, top, 0, 0, BB_WIDTH,ady);
             // the vertical strip should DY down
             screenOffsetY = ady;
             top += ady;
@@ -407,7 +425,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
 //            _drawBackground(cctx2, left, top+BB_HEIGHT-ady, BB_WIDTH, ady);
             drawToBackBuff(cctx2, left, top+BB_HEIGHT-ady, 
             		0, BB_HEIGHT-ady,
-            		BB_WIDTH,ady, cx,cy);
+            		BB_WIDTH,ady);
             // the vertical strip should start at top - no need for modifying top or translating context
         }
 
@@ -418,7 +436,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
             //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
             drawToBackBuff(cctx2, left, top,
             		0, screenOffsetY,
-            		adx, BB_HEIGHT-ady, cx,cy);
+            		adx, BB_HEIGHT-ady);
         }
         else {
             left += BB_WIDTH-adx;
@@ -427,7 +445,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
             //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
             drawToBackBuff(cctx2, left, top, 
             		BB_WIDTH-adx, screenOffsetY,
-            		adx, BB_HEIGHT-ady, cx,cy);
+            		adx, BB_HEIGHT-ady);
         }
 
 
