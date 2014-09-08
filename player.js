@@ -88,22 +88,20 @@ checkPlayerCollision = function() {
 	
 	// simple collision check
 	
-	if (Player.v.y < 0) {
-		// check collision at head level
-		if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.9)/CELL_SIZE|0)) {
-			headCollide = true;
-			if (isCollide(
-					(Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.6)/CELL_SIZE|0)) {
-				// deep collide - bounce back x and move back player
-				deepCollide = true;
-			}
+	// check collision at head level
+	if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.8)/CELL_SIZE|0)) {
+		headCollide = true;
+		if (isCollide(
+				(Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.6)/CELL_SIZE|0)) {
+			// deep collide - bounce back x and move back player
+			deepCollide = true;
 		}
 	}
-	// check horizontal at feet level
-	else if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y+CELL_SIZE)/CELL_SIZE|0)) {
+	// check at feet level - only if going down
+	if (Player.v.y >= 0 && isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y+2*CELL_SIZE)/CELL_SIZE|0)) {
 		feetCollide = true;
 		// collide at feet level - check slightly above and lift if ok
-		if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.3)/CELL_SIZE|0)) {
+		if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y)/CELL_SIZE|0)) {
 			deepCollide = true;
 		}
 	}
@@ -114,29 +112,27 @@ checkPlayerCollision = function() {
 			Player.v.x *= -.3;
 			Player.pos.x += toMoveX;
 		}
-		else {
-			// small collide - keep x but slow down
-			Player.v.x *= .5;
-		}
 
-		if (headCollide) {
-			if (Player.v.y > -.3) {
-				Player.v.y = 0;
-			}
-			else {
-				Player.v.y *= -.3;
-			}
-			Player.pos.y += CELL_SIZE-(Player.pos.y%CELL_SIZE);
+		if (abs(Player.v.y) < .3) {
+			Player.v.y = 0;
 		}
-		else if (feetCollide) {
-			// collide
-			if (Player.v.y < .3) {
-				Player.v.y = 0;
+		else {
+			Player.v.y *= -.3;
+		}
+		
+		if (headCollide) {
+			Player.pos.y += CELL_SIZE-(Player.pos.y%CELL_SIZE);
+			if (!deepCollide) {
+				Player.pos.y += CELL_SIZE;
 			}
-			else {
-				Player.v.y *= -.3;
+			Player.v.x *= .2; // friction with ceiling - remove for ice?
+		}
+		if (feetCollide) {
+			
+			Player.pos.y -= Player.pos.y%CELL_SIZE;
+			if (deepCollide) {
+				Player.pos.y -= CELL_SIZE;
 			}
-			Player.pos.y -= Player.pos.y%CELL_SIZE; 
 			Player.onGround =  true;
 			leftGround = 0;
 			return;
@@ -216,7 +212,7 @@ updatePlayer = function(dt) {
 	Player.v.scale(above? AIR_FRICTION : WATER_FRICTION) // air or water friction
 
 	// gravity or jetpack  -  higher gravity while "onGround" to allow going down diagonal without hopping
-	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.2 : (Player.onGround ? 0.9 : .5)));
+	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.25 : (Player.onGround ? 0.8 : .5)));
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
 	
@@ -255,4 +251,4 @@ updatePlayer = function(dt) {
 			Player.v.x *= .8;
 		}
 	}
-}
+};

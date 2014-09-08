@@ -183,7 +183,7 @@ drawImg = function(ctx, img, x,y) {
 
 
 initQueue = [],
-initFu = function(text, pg, fu, dl) {
-	initQueue.push([text,pg,fu, dl])
+initFu = function(text, pg, fu) {
+	initQueue.push([text,pg,fu])
 }
 

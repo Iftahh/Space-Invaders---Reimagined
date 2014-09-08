@@ -253,7 +253,7 @@ initialize = function() {
 	DC.getElementById('pbar-in').style.width = (progress*2)+'px'
 
 	todo[2]();
-	setTimeout(initialize, todo[3] || 0);
+	setTimeout(initialize, 0);
 };
 
 

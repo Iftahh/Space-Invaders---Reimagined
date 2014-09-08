@@ -6,6 +6,7 @@ var SZ = ground_pattern_size,
 	ground_canvas,
 	ground_pattern,
 	ice_pattern,
+	cave_floor_pattern,
 	rock_pattern,
 	cave_pattern,
 	cave_ctx,
@@ -63,7 +64,7 @@ initFu(TXT, 10, function() {
 	})
 	ice_pattern = mountainCtx.createPattern(ice_canvas, 'repeat')
 	
-	
+	addWaveFrame()
 });
 
 // drawImg(mountainCtx, cave_canvas, 0,0);
@@ -90,7 +91,7 @@ initFu(TXT, 10, function() {
 
 
 //drawImg(mountainCtx, cave_canvas, 0,0);
-initFu(TXT, 3, function() {
+initFu(TXT, 10, function() {
 	
 	emboss(ground_ctx);
 	applyHSVFilter(ground_ctx, shiftHSV(.1, .76, .34))
