@@ -5,6 +5,8 @@ var SZ = ground_pattern_size,
 	burned_grass_pattern,
 	ground_canvas,
 	ground_pattern,
+	ice_pattern,
+	rock_pattern,
 	cave_pattern,
 	cave_ctx,
 	shiftHSV = function(h,s,v) {
@@ -12,9 +14,7 @@ var SZ = ground_pattern_size,
 			// some pixels are not brownish despite the shift!
 			// not sure why, maybe some overflow?  for now use the min(.4) hack - 
 			// the hack produces bright green pixels instead of blue, still bad but not too much
-			var rgb = hsv2rgb(avg(min(hsv.h,.4), h), avg(hsv.s, s), avg(hsv.v, v))
-			
-			return rgb;
+			return hsv2rgb(avg(min(hsv.h,.4), h), avg(hsv.s, s), avg(hsv.v, v))
 		}
 	},
 
@@ -44,19 +44,30 @@ initFu(TXT, 10, function() {
 			painty([], SZ, SZ, 70,220, -1,2, 1,3, -1, 200),
 			painty([], SZ, SZ, 70, 100, -1,2, 1,3, -3, 100));
 
+	var ice_canvas = renderByRGB(
+			painty([], SZ, SZ, 60, 110, 1,3, -3,0, -4, 100),
+			painty([], SZ, SZ, 80, 160, 1,3, -3,0, -2, 500),
+			painty([], SZ, SZ, 20,  40, 1,3, -3,0, 4, 1000));
+
+	
 	// global
 	grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat');
 	
-	grass_ctx = Ctx(grass_canvas)
-	applyHSVFilter(grass_ctx, function(hsv) {
-		var rgb = hsv2rgb(hsv.h, hsv.s*.2, hsv.v*.4)
-		return rgb;
+	applyHSVFilter(Ctx(grass_canvas), function(hsv) {
+		return hsv2rgb(hsv.h, hsv.s*.2, hsv.v*.4)
 	})
 	burned_grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat')
+	
+	applyHSVFilter(Ctx(ice_canvas), function(hsv) {
+		return hsv2rgb(hsv.h, hsv.s*.3, min(1,hsv.v*1.2))
+	})
+	ice_pattern = mountainCtx.createPattern(ice_canvas, 'repeat')
+	
+	
 });
 
 // drawImg(mountainCtx, cave_canvas, 0,0);
-initFu(TXT, 6, function() {
+initFu(TXT, 10, function() {
 
 	ground_canvas = renderByRGB(
 			painty([], SZ, SZ,  80,140, -4,4, -4,4, 2, 300),

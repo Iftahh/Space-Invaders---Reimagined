@@ -71,43 +71,55 @@ var draw_man = function(color, v, angle) {
  * @returns True if standing on ground (colliding down feet-floor)
  */
 checkPlayerCollision = function() {
-	Player.inWind = 0 == getCellType(Player.pos.x / CELL_SIZE|0, (Player.pos.y-MAN_IMG_SIZE/3)/CELL_SIZE|0);
-	// simple collision check
+	var cell = getCellType(Player.pos.x / CELL_SIZE|0, (Player.pos.y-MAN_IMG_SIZE*.4)/CELL_SIZE|0),
+		deepCollide = headCollide = feetCollide = false,
+		horizOffset = 0,
+		toMoveX=0;
+	
+	Player.inWind = cell == AIR || cell == GRASS || cell == BURNED_GRASS;
 	if (Player.v.x > 0) {
-		// check right side collision
-		var cell = getCellType((Player.pos.x+MAN_IMG_SIZE/4) / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
-		if (cell >= 5) {
-			// collide at feet level - check slightly above and lift if ok
-			var cell = getCellType((Player.pos.x+MAN_IMG_SIZE/4) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE/3)/CELL_SIZE|0)
-			if (cell < 5) {
-				Player.pos.y -= CELL_SIZE;
-			}
-			else {
-				Player.v.x *= -.2;
-				Player.pos.x -= Player.pos.x%CELL_SIZE;
-			}
-		}
+		horizOffset = MAN_IMG_SIZE/4;
+		toMoveX = -Player.pos.x%CELL_SIZE;
 	}
 	if (Player.v.x < 0) {
-		// check left side collision
-		var cell = getCellType((Player.pos.x-MAN_IMG_SIZE/4) / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
-		if (cell >= 5) {
-			// collide
-			var cell = getCellType((Player.pos.x-MAN_IMG_SIZE/4) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE/3)/CELL_SIZE|0)
-			if (cell < 5) {
-				Player.pos.y -= CELL_SIZE;
-			}
-			else {
-				Player.v.x *= -.2;
-				Player.pos.x += CELL_SIZE-(Player.pos.x%CELL_SIZE);
+		horizOffset = MAN_IMG_SIZE/-4;
+		toMoveX = -Player.pos.x%CELL_SIZE+CELL_SIZE;
+	}
+	
+	// simple collision check
+	
+	if (Player.v.y < 0) {
+		// check collision at head level
+		if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.9)/CELL_SIZE|0)) {
+			headCollide = true;
+			if (isCollide(
+					(Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.6)/CELL_SIZE|0)) {
+				// deep collide - bounce back x and move back player
+				deepCollide = true;
 			}
 		}
 	}
-	if (Player.v.y < 0) {
-		// check head collision
-		var cell = getCellType(Player.pos.x / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.9)/CELL_SIZE|0)
-		if (cell >= 5) {
-			// collide
+	// check horizontal at feet level
+	else if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y+CELL_SIZE)/CELL_SIZE|0)) {
+		feetCollide = true;
+		// collide at feet level - check slightly above and lift if ok
+		if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y-MAN_IMG_SIZE*.3)/CELL_SIZE|0)) {
+			deepCollide = true;
+		}
+	}
+	
+	if (feetCollide || headCollide) {
+		if (deepCollide) {
+			// deep collide - bounce back 
+			Player.v.x *= -.3;
+			Player.pos.x += toMoveX;
+		}
+		else {
+			// small collide - keep x but slow down
+			Player.v.x *= .5;
+		}
+
+		if (headCollide) {
 			if (Player.v.y > -.3) {
 				Player.v.y = 0;
 			}
@@ -115,13 +127,8 @@ checkPlayerCollision = function() {
 				Player.v.y *= -.3;
 			}
 			Player.pos.y += CELL_SIZE-(Player.pos.y%CELL_SIZE);
-			Player.v.x *= .2;
 		}
-	}
-	if (Player.v.y > 0) {
-		// check feet collision
-		var cell = getCellType(Player.pos.x / CELL_SIZE |0, Player.pos.y/CELL_SIZE|0)
-		if (cell >= 5) {
+		else if (feetCollide) {
 			// collide
 			if (Player.v.y < .3) {
 				Player.v.y = 0;
@@ -135,6 +142,8 @@ checkPlayerCollision = function() {
 			return;
 		}
 	}
+	
+	// hack: stay on ground for 6 ticks even if not feet collided
 	if (leftGround++ > 6) {
 		Player.onGround = false;
 	}

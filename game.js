@@ -58,11 +58,11 @@ jetpack = ParticlePointEmitter(350, {
 		else {
 			// check collision
 			var cell = getCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0)
-			if (cell == 3) {// vegetation
+			if (cell == GRASS) {// vegetation
 				particle.timeToLive = 0;
 				smoke.addParticle(particle.position.x, particle.position.y);
 				// TODO: burn vegetation
-				setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, rnd()<.8? 32 : 0);
+				setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, rnd()<.8? BURNED_GRASS : AIR);
 
 //				groundBackCtx[curBackBuffInd].clearRect(particle.position.x - lastRenderX -CELL_SIZE,particle.position.y - lastRenderY -CELL_SIZE, 2*CELL_SIZE-2, 2*CELL_SIZE-2)
 //				drawToBackBuff(groundBackCtx[curBackBuffInd], particle.position.x - CELL_SIZE, particle.position.y -CELL_SIZE, 
@@ -72,7 +72,7 @@ jetpack = ParticlePointEmitter(350, {
 
 				
 			}
-			else if (cell > 4) {
+			else if (isCollideType(cell)) {
 				// bounce - assuming hit with floor/ceiling - flip v.y
 				particle.direction.y *= -1;
 			}

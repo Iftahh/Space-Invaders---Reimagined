@@ -1,12 +1,20 @@
 var levelPixels,
-
-//these colors in level indicate what kind of cell to draw in background canvas
-AIR = 'rgba(0,0,0,0)',
-CAVE_FLOOR = '#888',
-CAVE = '#444',  // underground AIR
-GROUND = '#eee',
-VEGETATION = '#666',
-ROCK = '#aaa'; // unbreakable
+	/*****
+	 * Backbuffers allow efficient conversion from level to bitmap only when necessary
+	 */
+	PAD = 200, // padding to allow some scroll without any redraw
+	BB_WIDTH = WIDTH+2*PAD, // backbuffer width = width+padding from left and right
+	BB_HEIGHT = HEIGHT+2*PAD,
+	_noise = [], NoiseLen=80,
+	curBackBuffInd = 0,
+	groundBackBuffs = [],
+	groundBackCtx = [],
+noiseX = function(x,y) {
+	return _noise[abs(x*11+y*3)%NoiseLen]
+},
+noiseY = function(x,y) {
+	return _noise[abs(x*9+y*7)%NoiseLen]
+};
 
 
 
@@ -78,18 +86,26 @@ initFu("Digging Caves", 10, function() {
 	 * see constants above
 	 */
 	var level = createCanvas(levelWidth, levelHeight),
-		ctx = Ctx(level);
+		ctx = Ctx(level),
+		//these colors in level indicate what kind of cell to draw in background canvas
+		//Note: red channel need to be x<<5  from the cell type!
+		C_AIR = 'rgba(0,0,0,0)',
+		C_VEGETATION = '#400000',
+		C_GROUND = '#600000',
+		C_CAVE_FLOOR = '#800000',
+		C_CAVE = '#a00000',  // underground AIR
+		C_ROCK = '#c00000'; // unbreakable
 	
 	
-	ctx.fillStyle = AIR;
+	ctx.fillStyle = C_AIR;
 	ctx.fillRect(0,0, levelWidth, levelHeight);
 		
 	
-	ctx.shadowColor = VEGETATION;
+	ctx.shadowColor = C_VEGETATION;
 	ctx.shadowBlur = 0;
 	ctx.shadowOffsetX = 0;
 	ctx.shadowOffsetY = -14;
-	ctx.fillStyle = GROUND;
+	ctx.fillStyle = C_GROUND;
 	
 	//	ctx.textAlign = 'center';
 	//	ctx.font = "bold 80px Arial";
@@ -123,11 +139,11 @@ initFu("Digging Caves", 10, function() {
 	
 	ctx.clip();
 	
-	ctx.shadowOffsetY = 1;
+	ctx.shadowOffsetY = 2;
 	ctx.lineWidth = 22;
-	ctx.shadowColor = CAVE_FLOOR;
+	ctx.shadowColor = C_CAVE_FLOOR;
 	ctx.beginPath();
-	ctx.strokeStyle = CAVE;
+	ctx.strokeStyle = C_CAVE;
 	// draw caves
 	ctx.moveTo(0,levelHeight * .6);
 	ctx.lineTo(levelWidth, levelHeight *.9);
@@ -140,15 +156,15 @@ initFu("Digging Caves", 10, function() {
 	ctx.stroke()
 	
 	ctx.beginPath()
-	ctx.fillStyle = CAVE;
+	ctx.fillStyle = C_CAVE;
 	ctx.arc(levelWidth*.10, levelHeight*.75, 30, 0, TPI)
 	ctx.arc(levelWidth*.90, levelHeight*.75, 30, 0, TPI)
 	ctx.fill();
 	
 	// text full inner
-	//	ctx.fillStyle = ROCK;
+	//	ctx.fillStyle = C_ROCK;
 	//	ctx.fillText(T,levelWidth/2, levelHeight - 250);
-	//	ctx.fillStyle = CAVE;
+	//	ctx.fillStyle = C_CAVE;
 	//	T = "ISLAND WAR";
 	//	ctx.fillText(T,levelWidth/2, levelHeight - 150);
 	
@@ -156,30 +172,17 @@ initFu("Digging Caves", 10, function() {
 	
 	levelPixels = new Uint8Array(levelWidth*levelHeight);
 	var d = ctx.getImageData(0,0,levelWidth, levelHeight).data,
-		i=0;
-	range(levelWidth*levelHeight, function(j) {
-		levelPixels[j] = d[i+= 4];
+		i=0,j=0;
+	duRange(levelWidth, levelHeight, function(x,y) {
+		// examining "R" in RGBA of the color
+		// the other (G,B,A) channels may be used later (ie. deadly, hidden passage, etc..)
+		
+		//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
+		//that is why not using the lower 5 binary digits
+		levelPixels[j++] = d[i+= 4] >> 5;
+		//if (levelPixels == )
 	});
 })
-
-
-
-/*****
- * Backbuffers allow efficient conversion from level to bitmap only when necessary
- */
-var PAD = 200, // padding to allow some scroll without any redraw
-BB_WIDTH = WIDTH+2*PAD, // backbuffer width = width+padding from left and right
-BB_HEIGHT = HEIGHT+2*PAD,
-_noise = [], NoiseLen=80,
-curBackBuffInd = 0,
-groundBackBuffs = [],
-groundBackCtx = [],
-noiseX = function(x,y) {
-	return _noise[abs(x*11+y*3)%NoiseLen]
-},
-noiseY = function(x,y) {
-	return _noise[abs(x*9+y*7)%NoiseLen]
-}
 
 
 range(2, function() {
@@ -292,60 +295,56 @@ redrawDirty = function() {
 },
 getCellType = function(x,y) {
 	if (y<0) { 
-		return 0; // above level is only AIR
+		return AIR; // above level is only AIR
 	}
 	if (x<0) {
-		if (y>=levelHeight-.4*x) {
-			if (y>=levelHeight-.4*x+2) {
-				return 5; // below level is more ground
-			}
-			return 7;
-		}
-		else {
-			return 0;
-		}
+		return (y>=levelHeight-.4*x) ? ROCK : AIR;
 	}
 	if (x>=levelWidth) {
-		if (y>= levelHeight+.4*(x-levelWidth)) {
-			if (y>= levelHeight+.4*(x-levelWidth)+2) {
-				return 5;
-			}
-			return 7;
-		}
-		else {
-			return 0;
-		}
+		return (y>= levelHeight+.4*(x-levelWidth)) ? ROCK : AIR;
 	}
 	if (y>=levelHeight) {
-		return 5;
+		return ROCK;
 	}
-	var red = levelPixels[y*levelWidth+x]  
-	// red is the "R" in RGBA of the color
-	// for now I'm keeping the other (G,B,A) channels for future use (ie. deadly, hidden passage, etc..)
-	
-	//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
-	//that is why not using the lower 5 binary digits 
-	
-	return red>>5;
+	return levelPixels[y*levelWidth+x]  
 },
 getPattern = function(x,y) {
-	var res = typeMap[getCellType(x,y)] 
-	return res===undefined? 4 : res;
-}
+	var res = typeMap[getCellType(x,y)];
+	return res === undefined ? CAVE_FLOOR : res;  // can't use the "||" trick because it might be zero
+},
+
+isCollide = function(x,y) {
+	return isCollideType(getCellType(x,y));
+	
+},
+isCollideType = function(t) {
+	return t == ROCK || t== GROUND;
+},
+
+AIR = 0,
+BURNED_GRASS = 1,
+GRASS = 2,
+GROUND = 3,
+CAVE_FLOOR = 4,
+CAVE = 5,
+ROCK = 6;
+
 
 initFu("Digging Caves", 10, function() {
-	typeMap = {
-		7: ground_pattern, // GROUND   
-		5: '#333', 	//ROCK  
-		4: '#777', //CAVE_FLOOR #888
-		3: grass_pattern,// VEGETATION   
-		2: cave_pattern, //CAVE
-		1: burned_grass_pattern, // burned tree
-		0: 0// AIR #0000
-	}
-	
+	// order matters - to avoid anti alias throwing to far away cell type
+	typeMap = [ 
+		0,				
+		burned_grass_pattern, 
+		grass_pattern,// VEGETATION   
+		ground_pattern, // GROUND   
+		'#777', //CAVE_FLOOR #888
+		cave_pattern, //CAVE
+		'#333' 	//ROCK  
+	]
 	addWaveFrame()
 });
+
+
 
 lastRenderX = lastRenderY = 10e6,
 
