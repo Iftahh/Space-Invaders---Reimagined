@@ -179,8 +179,15 @@ initFu("Digging Caves", 10, function() {
 		
 		//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
 		//that is why not using the lower 5 binary digits
-		levelPixels[j++] = d[i+= 4] >> 5;
-		//if (levelPixels == )
+		var res = d[i+= 4] >> 5;
+		var py = y/levelHeight;
+		if (py < .4 && (res == GRASS || res == GROUND)) {
+			//if (rnd() < 1-py) {
+			if (y < levelHeight-heights[x] + 100*(.4-py)) {
+				res = ICE;
+			}
+		}
+		levelPixels[j++] = res;
 	});
 })
 
@@ -318,7 +325,7 @@ isCollide = function(x,y) {
 	
 },
 isCollideType = function(t) {
-	return t == ROCK || t== GROUND;
+	return t == ROCK || t== GROUND || t==ICE;
 },
 
 AIR = 0,
@@ -327,7 +334,8 @@ GRASS = 2,
 GROUND = 3,
 CAVE_FLOOR = 4,
 CAVE = 5,
-ROCK = 6;
+ROCK = 6,
+ICE = 7;
 
 
 initFu("Digging Caves", 10, function() {
@@ -339,7 +347,8 @@ initFu("Digging Caves", 10, function() {
 		ground_pattern, // GROUND   
 		'#777', //CAVE_FLOOR #888
 		cave_pattern, //CAVE
-		'#333' 	//ROCK  
+		'#333', 	//ROCK
+		ice_pattern
 	]
 	addWaveFrame()
 });

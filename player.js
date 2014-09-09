@@ -169,9 +169,9 @@ DC.body.addEventListener('touchmove', function(event) {
     event.preventDefault();
 }, false);
 
-var MOUSE_POS = {x:0, y:0},
-rect = canvases[1].getBoundingClientRect();
+var MOUSE_POS = {x:0, y:0};
 canvases[canvases.length-1].addEventListener('mousemove', function(evt) {
+	var rect = canvases[1].getBoundingClientRect();
 	MOUSE_POS = {
       x: evt.clientX - rect.left,
       y: evt.clientY - rect.top
@@ -226,7 +226,7 @@ updatePlayer = function(dt) {
 			// splash some droplets
 			water.active = true;
 			water.position.x = Player.pos.x;
-			water.position.y = Player.pos.y+40;
+			water.position.y = Player.pos.y+MAN_IMG_SIZE-8;
 			water.speed = 0.75*Player.v.y;
 			water.emissionRate = 20*abs(Player.v.y);
 			//water.angle = Math.atan2(-abs(Player.v.y), 2*Player.v.x) * 180/PI;

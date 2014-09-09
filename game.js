@@ -58,11 +58,19 @@ jetpack = ParticlePointEmitter(350, {
 		else {
 			// check collision
 			var cell = getCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0)
-			if (cell == GRASS) {// vegetation
+			if (cell == GRASS || cell == ICE) {
 				particle.timeToLive = 0;
 				smoke.addParticle(particle.position.x, particle.position.y);
-				// TODO: burn vegetation
-				setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, rnd()<.8? BURNED_GRASS : AIR);
+
+				if (cell == ICE) {
+					water.speed = 3;
+					water.addParticle(particle.position.x, particle.position.y);
+					setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, AIR);
+				}
+				else {
+					// burn vegetation
+					setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, rnd()<.8? BURNED_GRASS : AIR);
+				}
 
 //				groundBackCtx[curBackBuffInd].clearRect(particle.position.x - lastRenderX -CELL_SIZE,particle.position.y - lastRenderY -CELL_SIZE, 2*CELL_SIZE-2, 2*CELL_SIZE-2)
 //				drawToBackBuff(groundBackCtx[curBackBuffInd], particle.position.x - CELL_SIZE, particle.position.y -CELL_SIZE, 
@@ -115,22 +123,22 @@ water = ParticlePointEmitter(250, {
 	angle: -90,
 	angleRandom: 80,
 	duration: 0.15,
-	finishColor: [40, 70, 140, 1],
+	finishColor: [40, 70, 140, .2],
 	finishColorRandom: [10,10,10,0],
 	gravity: vector_create(0,.5),
 	lifeSpan: 1.2,
 	lifeSpanRandom: 0.2,
 	positionRandom: vector_create(16,4),
-	sharpness: 82,
+	sharpness: 72,
 	sharpnessRandom: 12,
-	size: 18,
+	size: 14,
 	finishSize: 8,
 	sizeRandom: 1,
 	emissionRate: 100,
-	speed: 0,
-	colorEdge: 'rgba(240,240,255,0)',
+	speed: 2,
+	colorEdge: 'rgba(140,140,255,0)',
 	speedRandom: .5,
-	startColor: [40, 50, 120, 1],
+	startColor: [60, 80, 120, .9],
 	startColorRandom: [12, 12, 12, 0],
 	updateParticle: function(particle) {
 		if (particle.position.y > water_y && particle.direction.y > 0) {
@@ -141,6 +149,7 @@ water = ParticlePointEmitter(250, {
 	area: 0.05
 }),
 
+// accurately calculate the water level - not necessary, just waste of cpu and code
 //waterY = function(x) {
 //	var m = (x%WATER_SPRING_DX)/WATER_SPRING_DX;
 //	return springs[x/WATER_SPRING_DX | 0].height * m + (1-m)* springs[1+(x/WATER_SPRING_DX | 0)].height;

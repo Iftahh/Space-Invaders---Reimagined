@@ -21,6 +21,7 @@ var painty = function(buffer, width,height, base_min, base_top, mndirx,mxdirx, m
 
 
 rgb2hsv = function(r,g,b) {
+	if (DBG && (r>U8 || g>U8 || b>U8)) { alert("bad rgb")}
     r /= U8;
     g /= U8;
     b /= U8;
@@ -61,6 +62,7 @@ rgb2hsv = function(r,g,b) {
 },
 
 hsv2rgb = function(h, s, v) {
+	if (DBG && (h>1 || s>1 || v>1)) { alert("bad hsv")}
     if (s === undefined) {
         s = h.s, v = h.v, h = h.h;
     }

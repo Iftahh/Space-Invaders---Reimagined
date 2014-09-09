@@ -11,13 +11,17 @@ initFu("Painting Sky", 5, function() {
 			d[i++] = 80; // blue;    		
 			d[i++] = U8;
 	    })
-	    var row_offset = sky_width*4; // 4 bytes per pixel
-	    duRange(sky_width, HEIGHT-1, function() {
-			d[i] =  (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-5,3));
+	    // need on average for all 3 components to get to 255 when y=HEIGHT
+	    // 255-40 = 210  --> need average 210/HEIGHT  colors per pixel 
+	    // to give more "painty" look, don't make it linear but random jumps
+	    var chance = 210/HEIGHT,
+	    	row_offset = sky_width*4; // 4 bytes per pixel
+	    duRange(sky_width, HEIGHT-1, function(x,y) {
+			d[i] =  (d[i-4]+d[i-row_offset]+irnda(2) >> 1) + (rnd()<chance?irnda(2):0);
 			i++;
-			d[i] = (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-5,3));
+			d[i] = (d[i-4]+d[i-row_offset]+irnda(2) >> 1) + (rnd()<chance?irnda(2):0);
 			i++;
-			d[i] = (d[i-4]+d[i-row_offset] >> 1) + max(0,irndab(-5,3));
+			d[i] = (d[i-4]+d[i-row_offset]+irnda(2) >> 1) + (rnd()<chance?irnda(2):0);
 			i++;
 			d[i++] = U8;    	
 	    });

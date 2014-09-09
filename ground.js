@@ -43,12 +43,15 @@ initFu(TXT, 10, function() {
 	var grass_canvas = renderByRGB(
 			painty([], SZ, SZ, 60,180, -1,2, 1,3, -2, 100),
 			painty([], SZ, SZ, 70,220, -1,2, 1,3, -1, 200),
-			painty([], SZ, SZ, 70, 100, -1,2, 1,3, -3, 100));
+			painty([], SZ, SZ, 70, 100, -1,2, 1,3, -3, 100)),
 
-	var ice_canvas = renderByRGB(
-			painty([], SZ, SZ, 60, 110, 1,3, -3,0, -4, 100),
-			painty([], SZ, SZ, 80, 160, 1,3, -3,0, -2, 500),
-			painty([], SZ, SZ, 20,  40, 1,3, -3,0, 4, 1000));
+	minFu = function(fu,mn) {
+		return function(x,y) { return max(mn, fu(x,y))}
+	},
+	ice_canvas = renderByRGB(
+		minFu(painty([], SZ, SZ, 60, 110, 1,3, -3,0, -4, 100), 20),
+		minFu(painty([], SZ, SZ, 80, 160, 1,3, -3,0, -2, 500), 30),
+		minFu(painty([], SZ, SZ, 20,  40, 1,3, -3,0, 4, 1000), 80));
 
 	
 	// global
@@ -60,7 +63,7 @@ initFu(TXT, 10, function() {
 	burned_grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat')
 	
 	applyHSVFilter(Ctx(ice_canvas), function(hsv) {
-		return hsv2rgb(hsv.h, hsv.s*.3, min(1,hsv.v*1.2))
+		return hsv2rgb(hsv.h, hsv.s*.1, min(1,max(.75, hsv.v*1.1)))
 	})
 	ice_pattern = mountainCtx.createPattern(ice_canvas, 'repeat')
 	
