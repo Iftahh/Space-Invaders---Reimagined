@@ -97,8 +97,8 @@ checkPlayerCollision = function() {
 			deepCollide = true;
 		}
 	}
-	// check at feet level - only if going down
-	if (Player.v.y >= 0 && isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y+2*CELL_SIZE)/CELL_SIZE|0)) {
+	// check at feet level 
+	if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y+2*CELL_SIZE)/CELL_SIZE|0)) {
 		feetCollide = true;
 		// collide at feet level - check slightly above and lift if ok
 		if (isCollide((Player.pos.x+horizOffset) / CELL_SIZE |0, (Player.pos.y)/CELL_SIZE|0)) {
@@ -113,11 +113,11 @@ checkPlayerCollision = function() {
 			Player.pos.x += toMoveX;
 		}
 
-		if (abs(Player.v.y) < .3) {
+		if (abs(Player.v.y) < .2) {
 			Player.v.y = 0;
 		}
 		else {
-			Player.v.y *= -.3;
+            Player.v.y *= ((Player.v.y > 0 && feetCollide) || Player.v.y<0 && headCollide) ? -.3 : .3;
 		}
 		
 		if (headCollide) {

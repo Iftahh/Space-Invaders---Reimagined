@@ -139,7 +139,7 @@ initFu("Digging Caves", 10, function() {
 	
 	ctx.clip();
 	
-	ctx.shadowOffsetY = 2;
+	ctx.shadowOffsetY = 3;
 	ctx.lineWidth = 22;
 	ctx.shadowColor = C_CAVE_FLOOR;
 	ctx.beginPath();
@@ -181,11 +181,8 @@ initFu("Digging Caves", 10, function() {
 		//that is why not using the lower 5 binary digits
 		var res = d[i+= 4] >> 5;
 		var py = y/levelHeight;
-		if (py < .4 && (res == GRASS || res == GROUND)) {
-			//if (rnd() < 1-py) {
-			if (y < levelHeight-heights[x] + 100*(.4-py)) {
-				res = ICE;
-			}
+		if (py < .4 && (res == GRASS || res == GROUND) && (y < levelHeight-heights[x] + 100*(.4-py))) {
+			res = ICE;
 		}
 		levelPixels[j++] = res;
 	});
@@ -345,7 +342,7 @@ initFu("Digging Caves", 10, function() {
 		burned_grass_pattern, 
 		grass_pattern,// VEGETATION   
 		ground_pattern, // GROUND   
-		'#777', //CAVE_FLOOR #888
+		cave_floor_pattern, //CAVE_FLOOR #888
 		cave_pattern, //CAVE
 		'#333', 	//ROCK
 		ice_pattern
