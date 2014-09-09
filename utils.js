@@ -95,7 +95,7 @@ DC.getElementById('overlay').style.width = WIDTH+"px";
 DC.getElementById('overlay').style.left = (-WIDTH>>1)+"px";
 
 var cont =  DC.getElementById('canvas_cont');
-range(4, function(i) { 
+range(5, function(i) { 
    var canvas = createCanvas();
    canvas.style.left = (-WIDTH>>1)+'px';
    cont.appendChild(canvas);
@@ -106,9 +106,10 @@ range(4, function(i) {
  // current canvas to draw to - may toggle around for double buffering
 
 var skyCtx = contexts[0],
-mountainCtx = contexts[1],
-spritesCtx = contexts[2],
-waterCtx = contexts[3],
+skySpritesCtx = contexts[1],
+mountainCtx = contexts[2],
+spritesCtx = contexts[3],
+waterCtx = contexts[4],
 // Overlay context (overlay)
 
 

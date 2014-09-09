@@ -12,6 +12,7 @@ var frameCount = 0,
 
 	PWind = function() {return Player.inWind ? wind : 0; },
 	Wind = function() {return wind },
+	RandWind = function() { return wind + 1.5*wind*sin(.0001*prev_t)}
 
 // based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
 windForce=  function(wind, speed, area) {
@@ -90,6 +91,32 @@ jetpack = ParticlePointEmitter(350, {
 	area: 0.1
 }),
 
+snow = ParticlePointEmitter(450, {
+	active:true,
+	position: vector_create(WORLD_WIDTH/2,-200),
+	angle:90,
+	angleRandom: 180,
+	duration: -1,
+	finishColor: [240,240,250,0.1],
+	finishColorRandom: [10,10,10,0],
+	gravity: vector_create(0,.01),
+	lifeSpan: 15,
+	lifeSpanRandom: 0,
+	positionRandom: vector_create(WIDTH/2,100),
+	sharpness: 12,
+	sharpnessRandom: 12,
+	size: 20*SIZE_FACTOR|0,
+	finishSize: 10*SIZE_FACTOR|0,
+	sizeRandom: 2,
+	colorEdge: 'rgba(40,40,40,0)',
+	speed: .2,
+	speedRandom: 0.1,
+	startColor: [220, 220, 230, 1],
+	startColorRandom: [22, 22, 22, 0],
+	wind: RandWind,
+	area: .4
+})
+
 smoke = ParticlePointEmitter(250, {
 	active:false,
 	position: vector_create(),
@@ -165,13 +192,15 @@ animFrame = function(t) {
 	var frameInd = (frameCount/3 |0) % WATER_FRAMES;  // TODO: anim water frames based on FPS
 
 	updatePlayer(dt);
+	snow.position.x = Player.pos.x;
 	
 	// no more updates to player pos at this frame - update camera to point to player
 	
 	OffsetY = Player.pos.y - HEIGHT/2 |0;
 	OffsetX = Player.pos.x - WIDTH/2 |0;
 	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
-	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY)
+	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
+	skySpritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 
 	jetpack.position.x = Player.pos.x -(Player.leftFace ? 5: 15);
 	jetpack.position.y = Player.pos.y-25;
@@ -180,10 +209,11 @@ animFrame = function(t) {
 	jetpack.update(dt);
 	smoke.update(dt);
 	water.update(dt);
+	snow.update(dt);
 
 	
 	waterCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
-
+	skySpritesCtx.clearRect(OffsetX,OffsetY, WIDTH,HEIGHT);
 	spritesCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
 
 	spritesCtx.save()
@@ -191,6 +221,7 @@ animFrame = function(t) {
 	jetpack.renderParticles(spritesCtx);
 	spritesCtx.restore()
 	smoke.renderParticles(spritesCtx);
+	snow.renderParticles(skySpritesCtx);
 
 	if (yellow_man) {
 		Player.angle = Math.atan2(OffsetY+MOUSE_POS.y - Player.pos.y, OffsetX+MOUSE_POS.x - Player.pos.x);
