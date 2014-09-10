@@ -174,21 +174,17 @@ clouds = ParticlePointEmitter(350, {
 	position: vector_create(WORLD_WIDTH/2, -125*CELL_SIZE),
 	angle:0,
 	duration: -1,
-	finishColor: 0,
 	gravity: 0,
 	lifeSpan: 10,
 	emissionRate: -1,
 	positionRandom: vector_create(WORLD_WIDTH/2, 10*CELL_SIZE),
-	sharpness: 60,
-	sharpnessRandom: 6,
-	size: 240*SIZE_FACTOR|0,
-	finishSize: 240*SIZE_FACTOR|0,
+	size: 280*SIZE_FACTOR|0,
+	finishSize: 280*SIZE_FACTOR|0,
 	sizeRandom: 30,
 	speed: .2,
 	speedRandom: 0.1,
-	startColor: [150, 150, 150, 1],
 	wind: Wind,
-	area: .2,
+	area: .3,
 	updateParticle: function(p) {
 		p.timeToLive = 1000;
 		p.position.x += WORLD_WIDTH;
@@ -199,21 +195,9 @@ clouds = ParticlePointEmitter(350, {
 		var size = p.size |0,
 		x = p.position.x|0,
 		y = p.position.y|0;
-		
 		if (!p.img) {
-			var halfSize = size >> 1,
-				img = createCanvas(size*2, size),
-				ctx = Ctx(img),
-				radgrad = ctx.createRadialGradient( halfSize, halfSize, p.sizeSmall, halfSize, halfSize, halfSize);  
-			radgrad.addColorStop( 0, p.drawColor );   
-			radgrad.addColorStop( 1, p.drawColorEdge );
-			ctx.scale(2,1);
-			ctx.fillStyle = radgrad;
-			ctx.fillRect(0,0,size, size);
-			p.img = img;
+			p.img = getCloudImg(p.area * 100 |0)
 		}
-		
-		
 	  	context.drawImage( p.img, x, y, size*2, size );
 	}
 
@@ -426,9 +410,6 @@ initFu("Almost Ready...", 10, function() {
 	range(clouds.maxParticles, function() {
 		if (rnd() < 0.22) {
 			clouds.position.y+= 2;
-			clouds.startColor[0]--;
-			clouds.startColor[1]--;
-			clouds.startColor[2]--;
 			clouds.area *= .98;
 		}
 		var p = clouds.addParticle();

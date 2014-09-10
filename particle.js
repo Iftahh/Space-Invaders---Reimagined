@@ -47,9 +47,9 @@ Particle = function() {
 //	    size: 0,
 //	    sizeSmall: 0,
 //	    timeToLive: 0,
-	    color: [],
+//	    color: [],
 //	    drawColor: "",
-	    deltaColor: []
+//	    deltaColor: []
 //	    deltaSize: 0,
 //	    sharpness: 0,
 	}
@@ -169,6 +169,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 			particle.size = particle.size <= 1 ? 1 : particle.size|0;
 			particle.finishSize = this.finishSize + this.sizeRandom * rndab(-1,1);
 			
+			particle.area = this.area;
 			particle.timeToLive = this.lifeSpan + this.lifeSpanRandom * rndab(-1,1);
 			
 			particle.sharpness = this.sharpness + this.sharpnessRandom * rndab(-1,1);
@@ -176,35 +177,38 @@ ParticlePointEmitter = function(maxParticles, options) {
 			// internal circle gradient size - affects the sharpness of the radial gradient
 			particle.sizeSmall = ( particle.size / 200 ) * particle.sharpness|0; //(size/2/100)
 	
-			var start = [
-				this.startColor[ 0 ],
-				this.startColor[ 1 ],
-				this.startColor[ 2 ],
-				this.startColor[ 3 ]
-			];
-			if (this.startColorRandom) {
-				var that = this;
-				range(4, function(j) {start[j] += that.startColorRandom[ j ] * rndab(-1,1) })
-			}
-			
-			if (this.finishColor) {
-				var end = [
-					this.finishColor[ 0 ] + this.finishColorRandom[ 0 ] * rndab(-1,1),
-					this.finishColor[ 1 ] + this.finishColorRandom[ 1 ] * rndab(-1,1),
-					this.finishColor[ 2 ] + this.finishColorRandom[ 2 ] * rndab(-1,1),
-					this.finishColor[ 3 ] + this.finishColorRandom[ 3 ] * rndab(-1,1)
+			if (this.startColor) {
+				var start = [
+					this.startColor[ 0 ],
+					this.startColor[ 1 ],
+					this.startColor[ 2 ],
+					this.startColor[ 3 ]
 				];
-				particle.deltaColor[ 0 ] = ( end[ 0 ] - start[ 0 ] ) / particle.timeToLive;
-				particle.deltaColor[ 1 ] = ( end[ 1 ] - start[ 1 ] ) / particle.timeToLive;
-				particle.deltaColor[ 2 ] = ( end[ 2 ] - start[ 2 ] ) / particle.timeToLive;
-				particle.deltaColor[ 3 ] = ( end[ 3 ] - start[ 3 ] ) / particle.timeToLive;
+				if (this.startColorRandom) {
+					var that = this;
+					range(4, function(j) {start[j] += that.startColorRandom[ j ] * rndab(-1,1) })
+				}
+				
+				if (this.finishColor) {
+					var end = [
+						this.finishColor[ 0 ] + this.finishColorRandom[ 0 ] * rndab(-1,1),
+						this.finishColor[ 1 ] + this.finishColorRandom[ 1 ] * rndab(-1,1),
+						this.finishColor[ 2 ] + this.finishColorRandom[ 2 ] * rndab(-1,1),
+						this.finishColor[ 3 ] + this.finishColorRandom[ 3 ] * rndab(-1,1)
+					];
+					particle.deltaColor = [
+					                       ( end[ 0 ] - start[ 0 ] ) / particle.timeToLive,
+					                       ( end[ 1 ] - start[ 1 ] ) / particle.timeToLive,
+					                       ( end[ 2 ] - start[ 2 ] ) / particle.timeToLive,
+					                       ( end[ 3 ] - start[ 3 ] ) / particle.timeToLive];
+				}
+		
+		
+			    particle.color = start;
+			    if (DBG && isNaN(particle.color[ 2 ]) ) {
+			    	console.log("Error");
+			    }
 			}
-	
-	
-		    particle.color = start;
-	        if (DBG && isNaN(particle.color[ 2 ]) ) {
-	            console.log("Error");
-	        }
         	particle.deltaSize = (particle.finishSize - particle.size) / particle.timeToLive;
 		},
 		
@@ -239,7 +243,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 	                if (that.wind) {
 	                	currentParticle.direction.x += windForce(that.wind(currentParticle),
 	                											 currentParticle.direction.x,
-	                											 that.area);
+	                											 currentParticle.area);
 	                }
 	
 	                if (that.forcePoints) {
@@ -270,7 +274,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 					currentParticle.sizeSmall =  ( currentParticle.size / 200 ) * currentParticle.sharpness |0; //(size/2/100)
 	
 					// Update colors based on delta
-					if (currentParticle.deltaColor.length) {
+					if (currentParticle.deltaColor) {
 						currentParticle.color[ 0 ] += ( currentParticle.deltaColor[ 0 ] * delta );
 						currentParticle.color[ 1 ] += ( currentParticle.deltaColor[ 1 ] * delta );
 						currentParticle.color[ 2 ] += ( currentParticle.deltaColor[ 2 ] * delta );
@@ -279,14 +283,15 @@ ParticlePointEmitter = function(maxParticles, options) {
 //	                if (isNaN(a) ) {
 //	                    console.log("Error");
 //	                }
-					// Calculate the rgba string to draw.
-					var draw = "rgba("+[  minmax(0,255, currentParticle.color[ 0 ]|0),
-					                      minmax(0,255, currentParticle.color[ 1 ]|0),
-					                      minmax(0,255, currentParticle.color[ 2 ]|0)].join(',');
-					
-					currentParticle.drawColorEdge = that.colorEdge || (draw + ",0)")
-					currentParticle.drawColor = draw + ','+minmax(0,1, currentParticle.color[ 3 ].toFixed(2)) + ")";
-					
+					if (currentParticle.color) {
+						// Calculate the rgba string to draw.
+						var draw = "rgba("+[  minmax(0,255, currentParticle.color[ 0 ]|0),
+						                      minmax(0,255, currentParticle.color[ 1 ]|0),
+						                      minmax(0,255, currentParticle.color[ 2 ]|0)].join(',');
+						
+						currentParticle.drawColorEdge = that.colorEdge || (draw + ",0)")
+						currentParticle.drawColor = draw + ','+minmax(0,1, currentParticle.color[ 3 ].toFixed(2)) + ")";
+					}
 				} else {
 					that.particles.splice(particleIndex,1);
 					that.graveyard.push(currentParticle);
