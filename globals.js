@@ -12,10 +12,11 @@ WAVE_PASSES = 8,		   // more passes - smoother waves, more cpu
 levelWidth = 2048, // must be power of 2 for fractal mountain
 levelHeight = 1000,
 
-// These will change below to fit inside screen
+// Semi-constants - These will change once below to fit inside screen
 CELL_SIZE = 7,
 WIDTH = 10e6,
-HEIGHT = 0;
+HEIGHT = 0,
+SIZE_FACTOR = 1;
 
 
 if( /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ) {
@@ -37,17 +38,18 @@ while ((HEIGHT > innerHeight || WIDTH > innerWidth) && CELL_SIZE > 3) {
 	HEIGHT = 1400 * SIZE_FACTOR | 0;
 }
 
-WORLD_WIDTH = CELL_SIZE * levelWidth;
-WORLD_HEIGHT = CELL_SIZE * levelHeight;
+var WORLD_WIDTH = CELL_SIZE * levelWidth,
+	WORLD_HEIGHT = CELL_SIZE * levelHeight,
 
 /*************************************
  * These are not constants - their values may change in game
  */
 // globals
-var water_y = WORLD_HEIGHT-150,  // start above bottom of map 
+	water_y = WORLD_HEIGHT-150,  // start above bottom of map 
 	wind = 1.5,
 	water_frames = [],
 
 //var fcurCameraX, fcurCameraY; //  fcur-camera defines what is being viewed - needed to be float in order not to lock
-	OffsetX = OffsetY = 0; //  is the integer round of fcur - needed to be int in order to avoid fuzzy drawimage for images
+	OffsetX = 0,
+	OffsetY = 0; //  is the integer round of fcur - needed to be int in order to avoid fuzzy drawimage for images
 

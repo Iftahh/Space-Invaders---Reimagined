@@ -6,7 +6,7 @@ var Player = {
 
 
 
-yellow_man = red_man = 0,
+yellow_man = 0, red_man = 0,
 MAN_IMG_SIZE = 64*SIZE_FACTOR |0,
 
 man_canvas = createCanvas(2*MAN_IMG_SIZE, MAN_IMG_SIZE),
@@ -72,7 +72,7 @@ var draw_man = function(color, v, angle) {
  */
 checkPlayerCollision = function() {
 	var cell = getCellType(Player.pos.x / CELL_SIZE|0, (Player.pos.y-MAN_IMG_SIZE*.4)/CELL_SIZE|0),
-		deepCollide = headCollide = feetCollide = false,
+		deepCollide = false, headCollide = false, feetCollide = false,
 		horizOffset = 0,
 		toMoveX=0;
 	
@@ -145,7 +145,7 @@ checkPlayerCollision = function() {
 	}
 },
 
-SPACE = 32
+SPACE = 32,
 KEYS={},
 
 updateFromKeys = function(e) {

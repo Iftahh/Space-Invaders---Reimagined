@@ -105,10 +105,10 @@ applyHSVFilter = function(ctx, fu) {
 
 // displace bitmap pixels
 displace = function(displace_x, displace_y, pixel_data, new_data, width, height) {
-	var di = 0; // destination index
-	var i=0;
-	var w20 = 20*width;
-	var h20 = 20*height;
+	var di = 0, // destination index
+		i=0,
+		w20 = 20*width,
+		h20 = 20*height;
 	duRange(width, height, function(x,y) {
 		var dx = displace_x[i];
 		var dy = displace_y[i];
@@ -154,7 +154,7 @@ displace = function(displace_x, displace_y, pixel_data, new_data, width, height)
 //based on http://www.html5rocks.com/en/tutorials/canvas/imagefilters/
 _convulate = function(pixels, dst, weights) {
 	  
-    side = round(sqrt(weights.length)),
+    var side = round(sqrt(weights.length)),
   	halfSide = side/2|0,
   	src = pixels.data,
   	sw = pixels.width,

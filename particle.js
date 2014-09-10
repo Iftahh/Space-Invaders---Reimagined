@@ -71,7 +71,7 @@ Particle = function() {
 
 
 ParticlePointEmitter = function(maxParticles, options) {
-	res = {
+	var res = {
 			// options will override these defaults, no need to set them
 //	    particles: null,
 //	    maxParticles: null,
@@ -98,8 +98,8 @@ ParticlePointEmitter = function(maxParticles, options) {
 //	    sharpness: 35,							  // how sharp (percent) will the particle "ball" be (0 - very fuzzy)
 //	    sharpnessRandom: 12,
 			
-	    forcePoints: [], // pairs of weight and location.  positive weight attracts, negative weight pushes
-	    wind: null, // function returning value of wind - can change over time
+	    forcePoints: 0, // pairs of weight and location.  positive weight attracts, negative weight pushes
+	    wind: 0, // function returning value of wind - can change over time
 	    area: 0.3, // used to calculate wind affect
 	
 	    updateParticle: function() {},
@@ -183,28 +183,26 @@ ParticlePointEmitter = function(maxParticles, options) {
 				this.startColor[ 2 ] + this.startColorRandom[ 2 ] * rndab(-1,1),
 				this.startColor[ 3 ] + this.startColorRandom[ 3 ] * rndab(-1,1)
 			];
-	
-			var end = [
-				this.finishColor[ 0 ] + this.finishColorRandom[ 0 ] * rndab(-1,1),
-				this.finishColor[ 1 ] + this.finishColorRandom[ 1 ] * rndab(-1,1),
-				this.finishColor[ 2 ] + this.finishColorRandom[ 2 ] * rndab(-1,1),
-				this.finishColor[ 3 ] + this.finishColorRandom[ 3 ] * rndab(-1,1)
-			];
+			
+			if (this.finishColor) {
+				var end = [
+					this.finishColor[ 0 ] + this.finishColorRandom[ 0 ] * rndab(-1,1),
+					this.finishColor[ 1 ] + this.finishColorRandom[ 1 ] * rndab(-1,1),
+					this.finishColor[ 2 ] + this.finishColorRandom[ 2 ] * rndab(-1,1),
+					this.finishColor[ 3 ] + this.finishColorRandom[ 3 ] * rndab(-1,1)
+				];
+				particle.deltaColor[ 0 ] = ( end[ 0 ] - start[ 0 ] ) / particle.timeToLive;
+				particle.deltaColor[ 1 ] = ( end[ 1 ] - start[ 1 ] ) / particle.timeToLive;
+				particle.deltaColor[ 2 ] = ( end[ 2 ] - start[ 2 ] ) / particle.timeToLive;
+				particle.deltaColor[ 3 ] = ( end[ 3 ] - start[ 3 ] ) / particle.timeToLive;
+			}
 	
 	
 		    particle.color = start;
-	        if (isNaN(particle.color[ 2 ]) ) {
+	        if (DBG && isNaN(particle.color[ 2 ]) ) {
 	            console.log("Error");
 	        }
-			particle.deltaColor[ 0 ] = ( end[ 0 ] - start[ 0 ] ) / particle.timeToLive;
-			particle.deltaColor[ 1 ] = ( end[ 1 ] - start[ 1 ] ) / particle.timeToLive;
-			particle.deltaColor[ 2 ] = ( end[ 2 ] - start[ 2 ] ) / particle.timeToLive;
-			particle.deltaColor[ 3 ] = ( end[ 3 ] - start[ 3 ] ) / particle.timeToLive;
 			particle.deltaSize = (particle.finishSize - particle.size) / particle.timeToLive;
-	
-	        if (isNaN(particle.deltaColor[ 2 ]) ) {
-	            console.log("Error");
-	        }
 		},
 		
 		update: function( delta ){
@@ -241,18 +239,20 @@ ParticlePointEmitter = function(maxParticles, options) {
 	                											 that.area);
 	                }
 	
-	                for (var i=0; i<that.forcePoints.length; i++) {
-	                    var fp = that.forcePoints[i];
-	                    var weight = fp[0];
-	                    var location = fp[1];
-	                    var dir = vector_sub(currentParticle.position, location);
-	//                    var dist = vector_len(dir);
-	//                    if (dist == 0) {
-	//                        continue;
-	//                    }
-	                    // todo: force may depend on dist (ie. farther is weaker or other)
-	                    var force = vector_multiply(dir, weight/**1/dist*/);
-	                    currentParticle.direction = vector_add( currentParticle.direction, force);
+	                if (that.forcePoints) {
+		                for (var i=0; i<that.forcePoints.length; i++) {
+		                    var fp = that.forcePoints[i];
+		                    var weight = fp[0];
+		                    var location = fp[1];
+		                    var dir = vector_sub(currentParticle.position, location);
+		//                    var dist = vector_len(dir);
+		//                    if (dist == 0) {
+		//                        continue;
+		//                    }
+		                    // todo: force may depend on dist (ie. farther is weaker or other)
+		                    var force = vector_multiply(dir, weight/**1/dist*/);
+		                    currentParticle.direction = vector_add( currentParticle.direction, force);
+		                }
 	                }
 					currentParticle.position.add( currentParticle.direction );
 					currentParticle.timeToLive -= delta;
@@ -266,27 +266,23 @@ ParticlePointEmitter = function(maxParticles, options) {
 					currentParticle.size += currentParticle.deltaSize * delta;
 					currentParticle.sizeSmall =  ( currentParticle.size / 200 ) * currentParticle.sharpness |0; //(size/2/100)
 	
-//	                if (isNaN(currentParticle.color[ 2 ]) ) {
-//	                    console.log("Error");
-//	                }
-//	                if (isNaN(currentParticle.deltaColor[ 2 ]) ) {
-//	                    console.log("Error");
-//	                }
 					// Update colors based on delta
-					var r = currentParticle.color[ 0 ] += ( currentParticle.deltaColor[ 0 ] * delta );
-					var g = currentParticle.color[ 1 ] += ( currentParticle.deltaColor[ 1 ] * delta );
-					var b = currentParticle.color[ 2 ] += ( currentParticle.deltaColor[ 2 ] * delta );
-					var a = currentParticle.color[ 3 ] += ( currentParticle.deltaColor[ 3 ] * delta );
+					if (currentParticle.deltaColor) {
+						currentParticle.color[ 0 ] += ( currentParticle.deltaColor[ 0 ] * delta );
+						currentParticle.color[ 1 ] += ( currentParticle.deltaColor[ 1 ] * delta );
+						currentParticle.color[ 2 ] += ( currentParticle.deltaColor[ 2 ] * delta );
+						currentParticle.color[ 3 ] += ( currentParticle.deltaColor[ 3 ] * delta );
+					}
 //	                if (isNaN(a) ) {
 //	                    console.log("Error");
 //	                }
 					// Calculate the rgba string to draw.
-					var draw = [ "rgba(" + minmax(0,255, r|0),
-								  minmax(0,255, g|0),
-								  minmax(0,255, b|0)].join(',');
+					var draw = "rgba("+[  minmax(0,255, currentParticle.color[ 0 ]|0),
+					                      minmax(0,255, currentParticle.color[ 1 ]|0),
+					                      minmax(0,255, currentParticle.color[ 2 ]|0)].join(',');
 					
 					currentParticle.drawColorEdge = that.colorEdge || (draw + ",0)")
-					currentParticle.drawColor = draw + ','+minmax(0,1, a.toFixed(2)) + ")";
+					currentParticle.drawColor = draw + ','+minmax(0,1, currentParticle.color[ 3 ].toFixed(2)) + ")";
 					
 				} else {
 					that.particles.splice(particleIndex,1);

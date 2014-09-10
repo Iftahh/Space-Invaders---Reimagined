@@ -179,8 +179,8 @@ initFu("Digging Caves", 10, function() {
 		
 		//Note: canvas automatically has anti-alias :(  so can't rely on exact values.
 		//that is why not using the lower 5 binary digits
-		var res = d[i+= 4] >> 5;
-		var py = y/levelHeight;
+		var res = d[i+= 4] >> 5,
+			py = y/levelHeight;
 		if (py < .4 && (res == GRASS || res == GROUND) && (y < levelHeight-heights[x] + 100*(.4-py))) {
 			res = ICE;
 		}
@@ -275,8 +275,8 @@ var drawToBackBuff = function(ctx, cx,cy, x,y, w,h) {
  * Convert from level to canvas fillStyle that will be used to draw to the canvas
  */
  typeMap = {},
- minDirtyX=minDirtyY=10e6,
- maxDirtyX=maxDirtyY=-10e6,
+ minDirtyX=10e6, minDirtyY=10e6,
+ maxDirtyX=-10e6, maxDirtyY=-10e6,
 setCellType = function(x,y,t) {
 	levelPixels[y*levelWidth+x]  = t;
 	x*=CELL_SIZE;
@@ -352,7 +352,7 @@ initFu("Digging Caves", 10, function() {
 
 
 
-lastRenderX = lastRenderY = 10e6,
+var lastRenderX = 10e6, lastRenderY = 0,
 
 scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinates)
 	cx-=BB_WIDTH/2; 	// change to top left corner of back buffer

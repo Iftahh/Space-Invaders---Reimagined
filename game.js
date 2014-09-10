@@ -1,6 +1,4 @@
 
-
-
 waterCtx.globalAlpha = 0.9;
 
 var frameCount = 0,
@@ -12,7 +10,7 @@ var frameCount = 0,
 
 	PWind = function() {return Player.inWind ? wind : 0; },
 	Wind = function() {return wind },
-	RandWind = function() { return wind + 1.5*wind*sin(.0001*prev_t)}
+	RandWind = function() { return wind + 1.5*wind*sin(.0001*prev_t)},
 
 // based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
 windForce=  function(wind, speed, area) {
@@ -115,7 +113,7 @@ snow = ParticlePointEmitter(450, {
 	startColorRandom: [22, 22, 22, 0],
 	wind: RandWind,
 	area: .4
-})
+}),
 
 smoke = ParticlePointEmitter(250, {
 	active:false,

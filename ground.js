@@ -3,6 +3,7 @@ var SZ = ground_pattern_size,
 	cave_canvas,
 	grass_pattern,
 	burned_grass_pattern,
+	ground_ctx,
 	ground_canvas,
 	ground_pattern,
 	ice_pattern,
@@ -59,7 +60,7 @@ initFu(TXT, 10, function() {
 	grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat');
 	
 	applyHSVFilter(Ctx(grass_canvas), function(hsv) {
-		return hsv2rgb(hsv.h, hsv.s*.2, hsv.v*.4)
+		return hsv2rgb(hsv.h, hsv.s/4, hsv.v*.4)
 	})
 	burned_grass_pattern = mountainCtx.createPattern(grass_canvas, 'repeat')
 	
@@ -78,9 +79,9 @@ initFu(TXT, 10, function() {
 	ground_canvas = renderByRGB(
 			painty([], SZ+7, SZ+7,  80,140, -2,4, -2,4, 2, 300),
 			painty([], SZ+7, SZ+7,  80,140, -2,4, -2,4, -1, 300),
-			painty([], SZ+7, SZ+7,  40, 80, -2,4, -2,4, -2, 300));
+			painty([], SZ+7, SZ+7,  40, 80, -2,4, -2,4, -2, 300))
 	
-	cave_floor_canvas = renderByRGB(
+	var cave_floor_canvas = renderByRGB(
 			painty([], SZ, SZ, 30, 50, 1,4, 1,4, 5, 100),
 			painty([], SZ, SZ, 120, 180, 1,4, 1,4, -2, 200),
 			painty([], SZ, SZ, 150,  220, 1,4, 1,4, -2, 200))

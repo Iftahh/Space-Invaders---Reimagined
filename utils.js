@@ -169,7 +169,8 @@ var getPixels= function(ctx) {
 
 
 render2pixels=function(width, height, renderFunction) {
-	var canvas = createCanvas(width, height), ctx=Ctx(canvas)
+	var canvas = createCanvas(width, height), 
+		ctx=Ctx(canvas),
 		imgData=getPixels(ctx),
 	    d = imgData.data;
 	renderFunction(d,ctx,canvas);
