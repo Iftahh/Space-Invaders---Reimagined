@@ -181,7 +181,7 @@ initFu("Digging Caves", 10, function() {
 		//that is why not using the lower 5 binary digits
 		var res = d[i+= 4] >> 5,
 			py = y/levelHeight;
-		if (py < .4 && (res == GRASS || res == GROUND) && (y < levelHeight-heights[x] + 100*(.4-py))) {
+		if (py < SNOW_LEVEL && (res == GRASS || res == GROUND) && (y < levelHeight-heights[x] + 100*(SNOW_LEVEL-py))) {
 			res = ICE;
 		}
 		levelPixels[j++] = res;

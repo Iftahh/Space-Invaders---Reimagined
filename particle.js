@@ -51,23 +51,8 @@ Particle = function() {
 	    deltaColor: [],
 //	    deltaSize: 0,
 //	    sharpness: 0,
-	    
-	    // allow to override render
-	    render: function(context) {
-            var size = this.size;
-			var halfSize = size >> 1;
-			var x = this.position.x|0;
-			var y = this.position.y|0;
-			var radgrad = context.createRadialGradient( x + halfSize, y + halfSize, this.sizeSmall, x + halfSize, y + halfSize, halfSize);  
-			radgrad.addColorStop( 0, this.drawColor );   
-			radgrad.addColorStop( 1, this.drawColorEdge );
-			context.fillStyle = radgrad;
-		  	context.fillRect( x, y, size, size );
-	    }
 	}
 },
-
-
 
 
 ParticlePointEmitter = function(maxParticles, options) {
@@ -103,6 +88,18 @@ ParticlePointEmitter = function(maxParticles, options) {
 	    area: 0.3, // used to calculate wind affect
 	
 	    updateParticle: function() {},
+	    renderParticle: function(context, p) {
+            var size = p.size,
+				halfSize = size >> 1,
+				x = p.position.x|0,
+				y = p.position.y|0,
+				radgrad = context.createRadialGradient( x + halfSize, y + halfSize, p.sizeSmall, x + halfSize, y + halfSize, halfSize);  
+			radgrad.addColorStop( 0, p.drawColor );   
+			radgrad.addColorStop( 1, p.drawColorEdge );
+			context.fillStyle = radgrad;
+		  	context.fillRect( x, y, size, size );
+	    },
+
 	
 	    init: function(maxParticles, options) {
 			this.setOptions({
@@ -137,21 +134,16 @@ ParticlePointEmitter = function(maxParticles, options) {
 	        }
 	    },
 		
-//	    addParticles: function(n, x,y){
-//	    	range(n, function() {
-//	    		return !addParticle(x,y)
-//	    	})
-//	    },
 	    
 		addParticle: function(x,y){
-			if(this.particles.length == this.maxParticles) {
+			if(this.particles.length >= this.maxParticles) {
 				return null;
 			}
 			
 			// Take the next particle out of the particle pool we have created and initialize it
 			
 			var particle = this.graveyard.shift() || Particle();
-			this.initParticle( particle,x,y);
+			this.initParticle( particle,x || this.position.x, y || this.position.y);
 	        this.particles.push(particle);
 			return particle;
 		},
@@ -202,7 +194,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 	        if (DBG && isNaN(particle.color[ 2 ]) ) {
 	            console.log("Error");
 	        }
-			particle.deltaSize = (particle.finishSize - particle.size) / particle.timeToLive;
+        	particle.deltaSize = (particle.finishSize - particle.size) / particle.timeToLive;
 		},
 		
 		update: function( delta ){
@@ -211,7 +203,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 				var rate = 1 / this.emissionRate;
 				this.emitCounter += delta;
 				while( this.particles.length < this.maxParticles && this.emitCounter > rate ){
-					this.addParticle(this.position.x, this.position.y);
+					this.addParticle();
 					this.emitCounter -= rate;
 				}
 				if( this.duration != -1) {
@@ -258,7 +250,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 					currentParticle.timeToLive -= delta;
 					
 					// allow extenrnal update - set timeTolive to zero if particle should die
-					that.updateParticle(currentParticle);
+					that.updateParticle(currentParticle, particleIndex);
 				}
 				
 				if( currentParticle.timeToLive > 0 ){
@@ -267,7 +259,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 					currentParticle.sizeSmall =  ( currentParticle.size / 200 ) * currentParticle.sharpness |0; //(size/2/100)
 	
 					// Update colors based on delta
-					if (currentParticle.deltaColor) {
+					if (currentParticle.deltaColor.length) {
 						currentParticle.color[ 0 ] += ( currentParticle.deltaColor[ 0 ] * delta );
 						currentParticle.color[ 1 ] += ( currentParticle.deltaColor[ 1 ] * delta );
 						currentParticle.color[ 2 ] += ( currentParticle.deltaColor[ 2 ] * delta );
@@ -298,8 +290,9 @@ ParticlePointEmitter = function(maxParticles, options) {
 		},
 		
 		renderParticles: function( context ){
+			var that = this;
 	        each(this.particles, function(particle, particleIndex) {
-	        	particle.render(context);
+	        	that.renderParticle(context, particle);
 	            //context.arc(x,y, halfSize, Math.PI*2, false);
 			});
 		}

@@ -1,4 +1,5 @@
 
+
 waterCtx.globalAlpha = 0.9;
 
 var frameCount = 0,
@@ -10,7 +11,6 @@ var frameCount = 0,
 
 	PWind = function() {return Player.inWind ? wind : 0; },
 	Wind = function() {return wind },
-	RandWind = function() { return wind + 1.5*wind*sin(.0001*prev_t)},
 
 // based on http://stackoverflow.com/questions/4412345/implementing-wind-speed-in-our-projectile-motion
 windForce=  function(wind, speed, area) {
@@ -91,16 +91,16 @@ jetpack = ParticlePointEmitter(350, {
 
 snow = ParticlePointEmitter(450, {
 	active:true,
-	position: vector_create(WORLD_WIDTH/2,-200),
+	position: vector_create(WORLD_WIDTH/2,-60*CELL_SIZE),
 	angle:90,
 	angleRandom: 180,
 	duration: -1,
 	finishColor: [240,240,250,0.1],
 	finishColorRandom: [10,10,10,0],
-	gravity: vector_create(0,.01),
-	lifeSpan: 15,
+	gravity: vector_create(0,.02),
+	lifeSpan: 25,
 	lifeSpanRandom: 0,
-	positionRandom: vector_create(WIDTH/2,100),
+	positionRandom: vector_create(WIDTH*.7,5*CELL_SIZE),
 	sharpness: 12,
 	sharpnessRandom: 12,
 	size: 20*SIZE_FACTOR|0,
@@ -111,8 +111,65 @@ snow = ParticlePointEmitter(450, {
 	speedRandom: 0.1,
 	startColor: [220, 220, 230, 1],
 	startColorRandom: [22, 22, 22, 0],
-	wind: RandWind,
+	wind: Wind,
+	updateParticle: function(p, ind) {
+		p.position.x += sin(TPI*ind/50+0.001*prev_t);
+	},
 	area: .4
+}),
+
+
+clouds = ParticlePointEmitter(350, {
+	active:false,
+	position: vector_create(WORLD_WIDTH/2, -125*CELL_SIZE),
+	angle:0,
+	angleRandom: 0,
+	duration: -1,
+	finishColor: 0,
+	gravity: 0,
+	lifeSpan: 10,
+	emissionRate: -1,
+	lifeSpanRandom: 0,
+	positionRandom: vector_create(WORLD_WIDTH/2, 10*CELL_SIZE),
+	sharpness: 60,
+	sharpnessRandom: 6,
+	size: 240*SIZE_FACTOR|0,
+	finishSize: 240*SIZE_FACTOR|0,
+	sizeRandom: 30,
+	speed: .2,
+	speedRandom: 0.1,
+	startColor: [150, 150, 150, 1],
+	startColorRandom: [5, 5, 5, 0],
+	wind: Wind,
+	area: .2,
+	updateParticle: function(p) {
+		p.timeToLive = 1000;
+		p.position.x += WORLD_WIDTH;
+		p.position.x %= WORLD_WIDTH;
+	},
+	renderParticle:  function(context, p) { 
+		// render particle function where the radial gradient is calculated only once
+		var size = p.size |0,
+		x = p.position.x|0,
+		y = p.position.y|0;
+		
+		if (!p.img) {
+			var halfSize = size >> 1,
+				img = createCanvas(size*2, size),
+				ctx = Ctx(img),
+				radgrad = ctx.createRadialGradient( halfSize, halfSize, p.sizeSmall, halfSize, halfSize, halfSize);  
+			radgrad.addColorStop( 0, p.drawColor );   
+			radgrad.addColorStop( 1, p.drawColorEdge );
+			ctx.scale(2,1);
+			ctx.fillStyle = radgrad;
+			ctx.fillRect(0,0,size, size);
+			p.img = img;
+		}
+		
+		
+	  	context.drawImage( p.img, x, y, size*2, size );
+	},
+
 }),
 
 smoke = ParticlePointEmitter(250, {
@@ -174,6 +231,7 @@ water = ParticlePointEmitter(250, {
 	area: 0.05
 }),
 
+
 // accurately calculate the water level - not necessary, just waste of cpu and code
 //waterY = function(x) {
 //	var m = (x%WATER_SPRING_DX)/WATER_SPRING_DX;
@@ -184,21 +242,27 @@ water = ParticlePointEmitter(250, {
 prev_t = 0,
 fps = 0, // DBG
 
+snowRender = SNOW_LEVEL*WORLD_HEIGHT,
+
 animFrame = function(t) {
 	var dt = min(3.5, (t - prev_t)/32);
 	prev_t = t;
 	var frameInd = (frameCount/3 |0) % WATER_FRAMES;  // TODO: anim water frames based on FPS
 
 	updatePlayer(dt);
-	snow.position.x = Player.pos.x;
+	var shouldShowSnow = Player.pos.y < snowRender;
 	
 	// no more updates to player pos at this frame - update camera to point to player
 	
 	OffsetY = Player.pos.y - HEIGHT/2 |0;
 	OffsetX = Player.pos.x - WIDTH/2 |0;
-	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
-	skySpritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
+	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
+	if (shouldShowSnow) {
+		skySpritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
+		snow.position.x = Player.pos.x - wind*20*CELL_SIZE;
+	}
+	
 
 	jetpack.position.x = Player.pos.x -(Player.leftFace ? 5: 15);
 	jetpack.position.y = Player.pos.y-25;
@@ -207,7 +271,10 @@ animFrame = function(t) {
 	jetpack.update(dt);
 	smoke.update(dt);
 	water.update(dt);
-	snow.update(dt);
+	if (shouldShowSnow) {
+		snow.update(dt);
+		clouds.update(dt);
+	}
 
 	
 	waterCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
@@ -219,7 +286,10 @@ animFrame = function(t) {
 	jetpack.renderParticles(spritesCtx);
 	spritesCtx.restore()
 	smoke.renderParticles(spritesCtx);
-	snow.renderParticles(skySpritesCtx);
+	if (shouldShowSnow) {
+		snow.renderParticles(skySpritesCtx);
+		clouds.renderParticles(skySpritesCtx);
+	}
 
 	if (yellow_man) {
 		Player.angle = Math.atan2(OffsetY+MOUSE_POS.y - Player.pos.y, OffsetX+MOUSE_POS.x - Player.pos.x);
@@ -229,11 +299,13 @@ animFrame = function(t) {
 	waterCtx.save()
 	water.renderParticles(waterCtx);
 	waterCtx.restore()
-	if (prevFrameInd != frameInd) {
-		waterCtx.fillStyle = water_frames[frameInd];
-		prevFrameInd = frameInd;
+	if (Player.pos.y > water_y - HEIGHT) {
+		if (prevFrameInd != frameInd) {
+			waterCtx.fillStyle = water_frames[frameInd];
+			prevFrameInd = frameInd;
+		}
+		renderWater();
 	}
-	renderWater();
 		
 	
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
@@ -256,10 +328,8 @@ animFrame = function(t) {
     
     frameCount++;
     // TODO: remove later
-    if (DBG) {
-    	mountainCtx.font="20px Verdana";
-    	mountainCtx.fillStyle = '#fff';
-    	text= "Wind: "+wind;
+	var text= "Wind: "+wind;
+	if (DBG) {
     	text+= "  Player: "+Player.pos.x.toFixed(0)+","+Player.pos.y.toFixed(0);
     	text+= "  V: "+Player.v.x.toFixed(1)+","+Player.v.y.toFixed(1);
 		if (t - t0 > 5000) {
@@ -271,8 +341,11 @@ animFrame = function(t) {
 		}
 		text += " fire: "+jetpack.particles.length;
 		text += "  FPS: "+fps.toFixed(1)
-		mountainCtx.fillText(text, 10,50);
-    }
+	}
+	mountainCtx.fillText(text, WIDTH/2,50);
+	if (Player.engine_frozen) {
+		mountainCtx.fillText("Engine FROZEN!", WIDTH/2,HEIGHT/2 - 100);
+	}
 },
 
 progress = 0,
@@ -296,6 +369,23 @@ initialize = function() {
 
 
 initFu("Ready!", 10, function() {
+	range(clouds.maxParticles, function() {
+		if (rnd() < 0.2) {
+			clouds.position.y+= 2;
+			clouds.startColor[0]--;
+			clouds.startColor[1]--;
+			clouds.startColor[2]--;
+			clouds.area *= .98;
+		}
+		var p = clouds.addParticle();
+		p.finishSize = p.size;
+		p.deltaSize = 0;
+	})
+
+	mountainCtx.font="20px Verdana";
+	mountainCtx.textAlign = 'center';
+	mountainCtx.fillStyle = '#fff';
+
 	DC.getElementById('overlay').style.display = "none"; // TODO: add class for fade transition
 	RQ(animFrame);
 })

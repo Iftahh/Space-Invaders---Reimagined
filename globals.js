@@ -6,7 +6,8 @@ var DBG = true; // change to false before release!
 var sky_width = 250,  		   // width of sky pattern
 ground_pattern_size = 400, // size of pattern (width&height) for ground   
 WATER_FRAMES = DBG?2:10,         // number of frames in water animation - more for smoother animation but more memory and slower startup
-WAVE_PASSES = 8,		   // more passes - smoother waves, more cpu  		
+WAVE_PASSES = 8,		   // more passes - smoother waves, more cpu 
+SNOW_LEVEL = .4, 	// snow up to 40% of level height - this also decides at what point to render snow particles and clouds
 
 //level map dimensions - will be scaled xCELL_SIZE for actual background canvas
 levelWidth = 2048, // must be power of 2 for fractal mountain

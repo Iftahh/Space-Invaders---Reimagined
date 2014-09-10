@@ -1,6 +1,7 @@
 
 var Player = {
-	pos: vector_create(50*CELL_SIZE, 900*CELL_SIZE),   // start position
+	pos: vector_create(50*CELL_SIZE, 900*CELL_SIZE),   // start position - near water
+//	pos: vector_create(820*CELL_SIZE, 40*CELL_SIZE),   // start position - top of mountain
 	v: vector_create()
 },
 
@@ -207,12 +208,12 @@ updatePlayer = function(dt) {
 		Player.v.x += windForce(Wind(), Player.v.x, .02);
 	}
 
-	jetpack.active = KEYS[SPACE];
+	jetpack.active = !Player.engine_frozen && KEYS[SPACE];
 	var above = Player.pos.y < water_y;
 	Player.v.scale(above? AIR_FRICTION : WATER_FRICTION) // air or water friction
 
 	// gravity or jetpack  -  higher gravity while "onGround" to allow going down diagonal without hopping
-	Player.v.y = minmax(-10,20, Player.v.y + (KEYS[SPACE] ? -.25 : (Player.onGround ? 0.8 : .5)));
+	Player.v.y = minmax(-10,20, Player.v.y + (jetpack.active ? -.25 : (Player.onGround ? 0.8 : .5)));
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
 	
@@ -250,5 +251,13 @@ updatePlayer = function(dt) {
 		else {
 			Player.v.x *= .8;
 		}
+	}
+	else {
+		if (Player.pos.y < -20*CELL_SIZE) {
+			Player.engine_frozen = 20;
+		}
+	}
+	if (Player.engine_frozen) {
+		Player.engine_frozen--;
 	}
 };
