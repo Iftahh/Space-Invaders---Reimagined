@@ -17,7 +17,14 @@ windForce=  function(wind, speed, area) {
 	var dv = wind - speed;
 	return minmax(-10,10, abs(dv)*dv*area);
 },
-
+particleHitWater = function(particle) {
+	var x = particle.position.x;
+	smoke.addParticle(x, particle.position.y);
+	var spring = springs[springs.length*(1-(x-OffsetX)/WIDTH) |0 + irndab(-1,2)];
+	if (spring) {
+		spring.velocity += 1;
+	}
+},
 
 
 jetpack = ParticlePointEmitter(350, {
@@ -29,7 +36,6 @@ jetpack = ParticlePointEmitter(350, {
 	finishColorRandom: [40,40,40,0],
 	gravity: vector_create(0,.03),
 	lifeSpan: 1,
-	lifeSpanRandom: 0,
 	positionRandom: vector_create(4,6),
 	sharpness: 12,
 	sharpnessRandom: 12,
@@ -45,18 +51,13 @@ jetpack = ParticlePointEmitter(350, {
 	updateParticle: function(particle) {
 		if (particle.position.y > water_y) {
 			particle.timeToLive = 0;
-			var smokePar = smoke.addParticle(particle.position.x, particle.position.y);
-			if (smokePar) {
-				var x = particle.position.x;
-				var spring = springs[springs.length*(1-(x-OffsetX)/WIDTH) |0 + irndab(-1,2)];
-				if (spring) {
-					spring.velocity += 1;
-				}
-			}
+			particleHitWater(particle);
 		}
 		else {
 			// check collision
-			var cell = getCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0)
+			var cellX = (particle.position.x / CELL_SIZE|0)+1,
+			cellY = (particle.position.y/CELL_SIZE|0)+1,
+			cell = getCellType(cellX, cellY)
 			if (cell == GRASS || cell == ICE) {
 				particle.timeToLive = 0;
 				smoke.addParticle(particle.position.x, particle.position.y);
@@ -64,22 +65,15 @@ jetpack = ParticlePointEmitter(350, {
 				if (cell == ICE) {
 					water.speed = 3;
 					water.addParticle(particle.position.x, particle.position.y);
-					setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, AIR);
+					setCellType(cellX, cellY, AIR);
 				}
 				else {
 					// burn vegetation
-					setCellType(particle.position.x / CELL_SIZE|0, particle.position.y/CELL_SIZE|0, rnd()<.8? BURNED_GRASS : AIR);
+					setCellType(cellX, cellY, rnd()<.8? BURNED_GRASS : AIR);
 				}
-
-//				groundBackCtx[curBackBuffInd].clearRect(particle.position.x - lastRenderX -CELL_SIZE,particle.position.y - lastRenderY -CELL_SIZE, 2*CELL_SIZE-2, 2*CELL_SIZE-2)
-//				drawToBackBuff(groundBackCtx[curBackBuffInd], particle.position.x - CELL_SIZE, particle.position.y -CELL_SIZE, 
-//						particle.position.x - lastRenderX -CELL_SIZE,particle.position.y - lastRenderY -CELL_SIZE, 2*CELL_SIZE,2*CELL_SIZE, 
-//						lastRenderX,
-//						lastRenderY);
-
-				
 			}
 			else if (isCollideType(cell)) {
+				particle.position.sub(particle.direction);
 				// bounce - assuming hit with floor/ceiling - flip v.y
 				particle.direction.y *= -1;
 			}
@@ -89,9 +83,66 @@ jetpack = ParticlePointEmitter(350, {
 	area: 0.1
 }),
 
+
+laser = ParticlePointEmitter(100, {
+	active: false,
+	gravity:0,
+	position: vector_create(),
+	startColor: [200, 50, 50, .8],
+	speed: CELL_SIZE,// laser is updated multiple times each tick so speed is actually much higher
+	lifeSpan: 3, 		
+	renderParticle: function(ctx, p) {
+//		if (p.just_created) {
+//			p.just_created = false;
+//			return; // don't draw when just created
+//		}
+		ctx.moveTo(p.prev.x, p.prev.y);
+		ctx.lineTo(p.position.x, p.position.y);
+	},
+	updateParticle: function(particle) {
+		if (particle.timeToLive < 0) return;
+		particle.prev = vector_sub(particle.position, particle.direction); // one is added before this function
+		for (var i=0; i<6 && particle.timeToLive; i++) {
+			if (particle.position.y > water_y) {
+				particle.timeToLive *= .8;
+				particleHitWater(particle)
+			}
+			// check collision
+			var cellX = (particle.position.x/ CELL_SIZE|0)+1,
+				cellY = (particle.position.y/CELL_SIZE|0)+1,
+				cell = getCellType(cellX, cellY)
+			if (cell == GRASS || cell == ICE) {
+				smoke.addParticle(particle.position.x, particle.position.y);
+	
+				if (cell == ICE) {
+					water.speed = 3;
+					water.addParticle(particle.position.x, particle.position.y);
+					setCellType(cellX, cellY, AIR);
+				}
+				else {
+					particle.timeToLive = 0;
+					// burn vegetation
+					setCellType(cellX, cellY, rnd()<.8? BURNED_GRASS : AIR);
+				}
+				
+			}
+			else if (isCollideType(cell)) {
+				particle.timeToLive = 0;
+			}
+			particle.position.add( particle.direction );
+		}
+		if (!particle.timeToLive) {
+			particle.position.sub( particle.direction )
+			particle.timeToLive = .00001; // just above zero to still allow render to run but die at next update
+		}
+	}
+}),
+
+
+
 snow = ParticlePointEmitter(450, {
 	active:true,
-	position: vector_create(WORLD_WIDTH/2,-60*CELL_SIZE),
+	position: vector_create(Player.pos.x,-60*CELL_SIZE),
 	angle:90,
 	angleRandom: 180,
 	duration: -1,
@@ -99,7 +150,6 @@ snow = ParticlePointEmitter(450, {
 	finishColorRandom: [10,10,10,0],
 	gravity: vector_create(0,.02),
 	lifeSpan: 25,
-	lifeSpanRandom: 0,
 	positionRandom: vector_create(WIDTH*.7,5*CELL_SIZE),
 	sharpness: 12,
 	sharpnessRandom: 12,
@@ -123,13 +173,11 @@ clouds = ParticlePointEmitter(350, {
 	active:false,
 	position: vector_create(WORLD_WIDTH/2, -125*CELL_SIZE),
 	angle:0,
-	angleRandom: 0,
 	duration: -1,
 	finishColor: 0,
 	gravity: 0,
 	lifeSpan: 10,
 	emissionRate: -1,
-	lifeSpanRandom: 0,
 	positionRandom: vector_create(WORLD_WIDTH/2, 10*CELL_SIZE),
 	sharpness: 60,
 	sharpnessRandom: 6,
@@ -139,7 +187,6 @@ clouds = ParticlePointEmitter(350, {
 	speed: .2,
 	speedRandom: 0.1,
 	startColor: [150, 150, 150, 1],
-	startColorRandom: [5, 5, 5, 0],
 	wind: Wind,
 	area: .2,
 	updateParticle: function(p) {
@@ -168,7 +215,7 @@ clouds = ParticlePointEmitter(350, {
 		
 		
 	  	context.drawImage( p.img, x, y, size*2, size );
-	},
+	}
 
 }),
 
@@ -190,8 +237,8 @@ smoke = ParticlePointEmitter(250, {
 	finishSize: 60*SIZE_FACTOR|0,
 	sizeRandom: 6,
 	colorEdge: 'transparent',
-	speed: 1,
-	speedRandom: 0,
+	speed: 1.2,
+	speedRandom: .1,
 	startColor: [220, 220, 220, 1],
 	startColorRandom: [22, 22, 22, 0],
 	wind: Wind,
@@ -231,7 +278,6 @@ water = ParticlePointEmitter(250, {
 	area: 0.05
 }),
 
-
 // accurately calculate the water level - not necessary, just waste of cpu and code
 //waterY = function(x) {
 //	var m = (x%WATER_SPRING_DX)/WATER_SPRING_DX;
@@ -266,11 +312,11 @@ animFrame = function(t) {
 
 	jetpack.position.x = Player.pos.x -(Player.leftFace ? 5: 15);
 	jetpack.position.y = Player.pos.y-25;
-	
 	updateWaves(dt);
 	jetpack.update(dt);
-	smoke.update(dt);
-	water.update(dt);
+	laser.update(dt);
+	water.update(dt); // water update must come after jetpack and laser because they can create water
+	smoke.update(dt); // same as water
 	if (shouldShowSnow) {
 		snow.update(dt);
 		clouds.update(dt);
@@ -285,6 +331,15 @@ animFrame = function(t) {
 	spritesCtx.globalCompositeOperation = "lighter";
 	jetpack.renderParticles(spritesCtx);
 	spritesCtx.restore()
+	spritesCtx.beginPath()
+	laser.renderParticles(spritesCtx);
+	spritesCtx.strokeStyle = 'rgba(220, 40, 40, .5)';
+	spritesCtx.lineWidth = 7;
+	spritesCtx.stroke();
+	spritesCtx.lineWidth = 2;
+	spritesCtx.strokeStyle = 'rgba(255,225,225,.8)';
+	spritesCtx.stroke();
+
 	smoke.renderParticles(spritesCtx);
 	if (shouldShowSnow) {
 		snow.renderParticles(skySpritesCtx);
@@ -292,7 +347,6 @@ animFrame = function(t) {
 	}
 
 	if (yellow_man) {
-		Player.angle = Math.atan2(OffsetY+MOUSE_POS.y - Player.pos.y, OffsetX+MOUSE_POS.x - Player.pos.x);
 		draw_man(0, Player.pos, Player.angle);
 	}
 
@@ -368,9 +422,9 @@ initialize = function() {
 };
 
 
-initFu("Ready!", 10, function() {
+initFu("Almost Ready...", 10, function() {
 	range(clouds.maxParticles, function() {
-		if (rnd() < 0.2) {
+		if (rnd() < 0.22) {
 			clouds.position.y+= 2;
 			clouds.startColor[0]--;
 			clouds.startColor[1]--;
@@ -381,11 +435,13 @@ initFu("Ready!", 10, function() {
 		p.finishSize = p.size;
 		p.deltaSize = 0;
 	})
-
+	
 	mountainCtx.font="20px Verdana";
 	mountainCtx.textAlign = 'center';
 	mountainCtx.fillStyle = '#fff';
+});
 
+initFu("Ready!", 1, function() {
 	DC.getElementById('overlay').style.display = "none"; // TODO: add class for fade transition
 	RQ(animFrame);
 })

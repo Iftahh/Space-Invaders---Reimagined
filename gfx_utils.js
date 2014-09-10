@@ -245,4 +245,75 @@ emboss = function(ctx) {
 	// draw the top-left lighter
 	ctx.globalCompositeOperation = "lighter";
 	ctx.drawImage(edges1,0,0,w,h);
-};
+},
+
+intArrayToImg = function(arr, width,height) {
+	return render2pixels(width,height, function(d) {
+		var i=0;
+		
+		for (var y=0; y<height; y++) {
+			for (var x=0; x<width; ) {
+				var num = arr[i++];
+				var runOffset = y*width+x;
+				for (var b=0; b<16; b++) {  // each num is a strip of 16 pixels
+					var val = (num & 3) * U8/3 |0,
+						offset = (runOffset+15-b)*4;
+					num >>= 2;
+					d[offset++] = val;
+					d[offset++] = val;
+					d[offset++] = val;
+					d[offset++] = (val == 0) ? 0: U8; // alpha is all or nothing
+				}
+				x+=16;
+			}
+		} 
+	})
+}
+
+if (DBG) {
+	/**
+	 * Convert img to byte string - 2bits per pixel  - 00 = transparent, 1,2,3 - different levels of gray
+	 * width should be divisible by 16
+	 */
+	convertImgToIntArray = function(img) {
+		// convert Image to Canvas
+		var canvas = createCanvas(img.width, img.height);
+			ctx = Ctx(canvas);
+		ctx.drawImage(img, 0,0, img.width, img.height );
+		
+		var	pixels = getPixels(ctx).data,
+			result = [], 
+			i=0; // pixels byte index
+		for (var y=0; y<img.height; y++) {
+			var collector = 0;
+			for (var x=0; x<img.width; x++) {
+				var r = pixels[i++],
+					g = pixels[i++],
+					b = pixels[i++],
+					a = pixels[i++];
+				if (a > 10) {
+					var hsv = rgb2hsv(r,g,b),
+						rgb = hsv2rgb(hsv.h, 0, hsv.v), // grayscale
+						twobit = 0;
+					r = rgb.r;
+					if (r > .66*U8) {
+						twobit = 3;
+					}
+					else if (r > U8/3) {
+						twobit = 2;
+					}
+					else twobit = 1;
+					
+					collector += twobit;
+				}
+				if ((x+1) % 16 == 0) {
+					result.push(collector);
+					collector = 0;
+				}
+				collector <<= 2;
+			}
+		}
+		return result;
+	}
+}
+

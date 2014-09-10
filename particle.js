@@ -15,7 +15,8 @@
 var vector_create=function( x, y ){
     return {x:x || 0,y: y || 0,
     	scale: function(s) { this.x *= s; this.y *= s},
-    	add: function(v) {this.x += v.x; this.y += v.y}
+    	add: function(v) {this.x += v.x; this.y += v.y},
+    	sub: function(v) {this.x -= v.x; this.y -= v.y}
 //    	,len2: function() {return sq(this.x)+sq(this.y)}
     }
 },
@@ -48,7 +49,7 @@ Particle = function() {
 //	    timeToLive: 0,
 	    color: [],
 //	    drawColor: "",
-	    deltaColor: [],
+	    deltaColor: []
 //	    deltaSize: 0,
 //	    sharpness: 0,
 	}
@@ -109,13 +110,19 @@ ParticlePointEmitter = function(maxParticles, options) {
 		        active: true,
 
 		//        this.position = vector_create(300, 300);
-		        positionRandom:  vector_create(12, 12),
+		        positionRandom:  vector_create(0, 0),
 		        gravity:  vector_create( 0.0, 0.3),
 		
 		        elapsedTime: 0, // used to count active time - only when duration > 0
 		        duration: -1,   // autostop the emitter after this duration (-1 = infinity)
 		        emissionRate:0,
 		        emitCounter: 0,
+		        
+		        lifeSpanRandom: 0,
+		        angleRandom: 0,
+		        sizeRandom: 0,
+		        speedRandom: 0,
+		        sharpnessRandom: 0,
 		
 				emitCounter: 0				
 			})
@@ -170,11 +177,15 @@ ParticlePointEmitter = function(maxParticles, options) {
 			particle.sizeSmall = ( particle.size / 200 ) * particle.sharpness|0; //(size/2/100)
 	
 			var start = [
-				this.startColor[ 0 ] + this.startColorRandom[ 0 ] * rndab(-1,1),
-				this.startColor[ 1 ] + this.startColorRandom[ 1 ] * rndab(-1,1),
-				this.startColor[ 2 ] + this.startColorRandom[ 2 ] * rndab(-1,1),
-				this.startColor[ 3 ] + this.startColorRandom[ 3 ] * rndab(-1,1)
+				this.startColor[ 0 ],
+				this.startColor[ 1 ],
+				this.startColor[ 2 ],
+				this.startColor[ 3 ]
 			];
+			if (this.startColorRandom) {
+				var that = this;
+				range(4, function(j) {start[j] += that.startColorRandom[ j ] * rndab(-1,1) })
+			}
 			
 			if (this.finishColor) {
 				var end = [

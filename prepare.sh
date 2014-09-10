@@ -21,7 +21,8 @@ java -jar ~/devel/closure_compiler/compiler.jar --compilation_level ADVANCED  --
 rm index.html
 cp ../prepared_index.html index.html
 cp ../man.gif .
-zip js13.zip js13.js index.html man.gif
+#zip js13.zip js13.js index.html man.gif
+zip js13.zip js13.js index.html
 \ls -l js13.*
 
 #rm -f all.js
