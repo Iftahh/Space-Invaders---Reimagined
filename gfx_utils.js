@@ -165,7 +165,7 @@ _convulate = function(pixels, dst, weights) {
   duRange(sw,sh, function(x,y) {
       // calculate the weighed sum of the source image pixels that
       // fall under the convolution matrix
-      var r=0, g=0, b=0;//, a=0;
+      var r=0, g=0, b=0, a=src[(y*sw+x)*4+3];
       duRange(side, side, function(cx,cy) {
           var scy = y + cy - halfSide;
           var scx = x + cx - halfSide;
@@ -185,7 +185,7 @@ _convulate = function(pixels, dst, weights) {
       dst[dstOff++] = r;
       dst[dstOff++] = g;
       dst[dstOff++] = b;
-      dst[dstOff++] = U8;//a + alphaFac*(255-a);
+      dst[dstOff++] = a;//U8;//a + alphaFac*(255-a);
   })
 },
 
@@ -194,30 +194,31 @@ convolute = function(ctxIn, ctxOut, weights) {
   	   output = (ctxOut || ctxIn).createImageData(pixels.width, pixels.height);
  
   _convulate(pixels, output.data, weights);
-  if (!ctxOut) {
-	  return output;
+  if (ctxOut) {
+	  ctxOut.putImageData(output, 0, 0)
   }
-  ctxOut.putImageData(output, 0, 0)
+  return output;
 },
 
 
 
-emboss = function(ctx) {
-	var w=ctx.canvas.width, h=ctx.canvas.height;
+emboss = function(ctx, bottomRightBright) {
+	var w=ctx.canvas.width, h=ctx.canvas.height,
 	
 	// find top-left edges
-	var edges1 = createCanvas(w,h)
-	convolute(ctx, Ctx(edges1),  
+		edgesTopLeft = createCanvas(w,h),
+	tl = convolute(ctx, Ctx(edgesTopLeft),  
 			[-1,  0,  0,  0,  0,
 		     0, -2,  0,  0,  0,
 		     0,  0,  3,  0,  0,
 		     0,  0,  0,  0,  0,
 		     0,  0,  0,  0, 0]
-			);
+			),
 
 	
 	// find the bottom-right edges
-	var filtered = convolute(ctx, 0,
+	edgesBottomRight = createCanvas(w,h),
+	br = convolute(ctx, Ctx(edgesBottomRight),
 			[0,  0,  0,  0,  0,
 		     0, 0,  0,  0,  0,
 		     0,  0,  3,  0,  0,
@@ -225,7 +226,11 @@ emboss = function(ctx) {
 		     0,  0,  0,  0, -1]
 		),
 		i=0, 
-		data = filtered.data;
+		imgData = bottomRightBright ? tl : br,
+		data = imgData.data,
+		lighter = edgesTopLeft,
+		darker = edgesBottomRight;
+	
 	// inverse r,g,b 
 	range(w*h, function() {
 		range(3,function() {
@@ -235,17 +240,23 @@ emboss = function(ctx) {
 		i++;
 	})
 	
-	var edges2 = createCanvas(w,h); 
-	Ctx(edges2).putImageData(filtered, 0, 0);
+	if (bottomRightBright) {
+		lighter = edgesBottomRight;
+		darker = edgesTopLeft;
+	}
+	Ctx(darker).putImageData(imgData, 0, 0);
 
 	// draw the bottom-right darker
 	ctx.globalCompositeOperation = "darken"; 
-	ctx.drawImage(edges2,0,0,w,h);
+	ctx.drawImage(darker,0,0,w,h);
 
 	// draw the top-left lighter
 	ctx.globalCompositeOperation = "lighter";
-	ctx.drawImage(edges1,0,0,w,h);
+	ctx.drawImage(lighter,0,0,w,h);
 },
+
+
+
 
 intArrayToImg = function(arr, width,height) {
 	return render2pixels(width,height, function(d) {

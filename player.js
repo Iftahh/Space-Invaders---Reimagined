@@ -6,18 +6,27 @@ var Player = {
 	
 	laser_cooldown: 0
 },
+yellow_man = 0, MAN_IMG_SIZE = 64 * SIZE_FACTOR | 0;
 
-manImage = intArrayToImg([0, 0, 0, 44016, 0, 0, 176124, 0, 0, 152917, 0, 0, 177556, 0, 0, 174826, 0, 1024, 174680, 5119, -2096, 174752, 1365, 1431655764, 175088, 5467, -445688492, 437244, 86, -50380800, 437247, 6, -1124253696, 1747967, 1, -1359396864, 437247, 0, 1788870656, 1485823, 0, 444596224, 1485823, 0, 83886080, 1485567, 0, 0, 1747711, 0, 0, 1485804, 0, 0, 48175, 0, 0, 15407, 0, 0, 11307, 0, 0, 11304, 0, 0, 11307, 0, 0, 11051, 0, 0],
+initFu("Chasing Sprites", 10, function() {
+
+	var manImage = intArrayToImg([0, 0, 0, 44016, 0, 0, 176124, 0, 0, 152917, 0, 0, 177556, 0, 0, 174826, 0, 1024, 174680, 5119, -2096, 174752, 1365, 1431655764, 175088, 5467, -445688492, 437244, 86, -50380800, 437247, 6, -1124253696, 1747967, 1, -1359396864, 437247, 0, 1788870656, 1485823, 0, 444596224, 1485823, 0, 83886080, 1485567, 0, 0, 1747711, 0, 0, 1485804, 0, 0, 48175, 0, 0, 15407, 0, 0, 11307, 0, 0, 11304, 0, 0, 11307, 0, 0, 11051, 0, 0],
 				48,24),
-//manImage = new Image(),
+	//manImage = new Image(),
 
-yellow_man = 0, red_man = 0, MAN_IMG_SIZE = 64 * SIZE_FACTOR | 0,
-
-man_canvas = createCanvas(2 * MAN_IMG_SIZE, MAN_IMG_SIZE),
-ctx = Ctx(man_canvas);
+	man_canvas = createCanvas(2 * MAN_IMG_SIZE, MAN_IMG_SIZE),
+	ctx = Ctx(man_canvas);
 
 //manImage.onload = function() {
 	ctx.drawImage(manImage, 0, 0, 2 * MAN_IMG_SIZE, MAN_IMG_SIZE);
+	emboss(ctx, true);
+//	convolute(ctx, ctx,  
+//			[-1,  0,  0,  0,  0,
+//		     0, -2,  0,  0,  0,
+//		     0,  0,  3,  0,  0,
+//		     0,  0,  0,  0,  0,
+//		     0,  0,  0,  0, 0]
+//			);
 	yellow_man = createCanvas(2 * MAN_IMG_SIZE, MAN_IMG_SIZE);
 	// red_man = createCanvas( 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
 	// var rctx = Ctx(red_man);
@@ -43,8 +52,10 @@ ctx = Ctx(man_canvas);
 	});
 	// rctx.putImageData(redid,0,0)
 	bctx.putImageData(yellowid, 0, 0);
+});
 //};
 //manImage.src = './man.gif';
+	
 
 var draw_man = function(color, v, angle) {
 	var man = color ? red_man : yellow_man;
