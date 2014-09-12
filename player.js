@@ -89,22 +89,18 @@ checkPlayerCollision = function() {
 	// simple collision check
 
 	// check collision at head level
-	if (isCollide((Player.pos.x + horizOffset) / CELL_SIZE | 0,
-			(Player.pos.y - MAN_IMG_SIZE * .8) / CELL_SIZE | 0)) {
+	if (isCollide(Player.pos.x + horizOffset, Player.pos.y - MAN_IMG_SIZE * .8)) {
 		headCollide = true;
-		if (isCollide((Player.pos.x + horizOffset) / CELL_SIZE | 0,
-				(Player.pos.y - MAN_IMG_SIZE * .6) / CELL_SIZE | 0)) {
+		if (isCollide(Player.pos.x + horizOffset, Player.pos.y - MAN_IMG_SIZE * .6)){
 			// deep collide - bounce back x and move back player
 			deepCollide = true;
 		}
 	}
 	// check at feet level
-	if (isCollide((Player.pos.x + horizOffset) / CELL_SIZE | 0,
-			(Player.pos.y + 2 * CELL_SIZE) / CELL_SIZE | 0)) {
+	if (isCollide(Player.pos.x + horizOffset, Player.pos.y + 2 * CELL_SIZE)) {
 		feetCollide = true;
 		// collide at feet level - check slightly above and lift if ok
-		if (isCollide((Player.pos.x + horizOffset) / CELL_SIZE | 0,
-				(Player.pos.y) / CELL_SIZE | 0)) {
+		if (isCollide(Player.pos.x + horizOffset, Player.pos.y)) {
 			deepCollide = true;
 		}
 	}

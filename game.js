@@ -72,7 +72,7 @@ jetpack = ParticlePointEmitter(350, {
 					setCellType(cellX, cellY, rnd()<.8? BURNED_GRASS : AIR);
 				}
 			}
-			else if (isCollideType(cell)) {
+			else if (collidableTypes[cell]) {
 				particle.position.sub(particle.direction);
 				// bounce - assuming hit with floor/ceiling - flip v.y
 				particle.direction.y *= -1;
@@ -187,7 +187,7 @@ laser = ParticlePointEmitter(100, {
 					continue;
 				}
 			}
-			else if (isCollideType(cell)) {
+			else if (collidableTypes[cell]) {
 				particle.timeToLive = 0;
 				sparks.addParticle(x, y);
 				continue;
@@ -227,6 +227,7 @@ snow = ParticlePointEmitter(SNOW_PARTICLES, {
 	wind: Wind,
 	updateParticle: function(p, ind) {
 		p.position.x += sin(TPI*ind/50+0.001*prev_t);
+		p.direction.y = min(p.direction.y, 4*SIZE_FACTOR); // snow can't fall too fast
 	},
 	area: .4
 }),
@@ -335,7 +336,7 @@ water = ParticlePointEmitter(250, {
 prev_t = 0,
 fps = 0, // DBG
 
-snowRender = SNOW_LEVEL*WORLD_HEIGHT,
+snowRender = SNOW_LEVEL*WORLD_HEIGHT+20*CELL_SIZE,
 
 animFrame = function(t) {
 	var dt = min(3.5, (t - prev_t)/32);

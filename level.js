@@ -241,9 +241,9 @@ var drawToBackBuff = function(ctx, cx,cy, x,y, w,h) {
 		range(cellsPerRow, function(lx){
 			// find horizontal strips- make rectangles of them
 			var curType = getPattern(lvlX+lx, ly);
-			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
-				console.log(curType+" pixel at y="+ly.toFixed(1)+" x="+(lx+lvlX).toFixed(1));
-			}
+//			if (DBG && (curType === undefined)){ //|| curType == '#433')) {
+//				console.log(curType+" pixel at y="+ly.toFixed(1)+" x="+(lx+lvlX).toFixed(1));
+//			}
 			if ((curType != prevType) || lx>=cellsPerRow-1) {
 				if (prevType) {
 					ctx.fillStyle = prevType;
@@ -355,15 +355,14 @@ getPattern = function(x,y) {
 	var res = typeMap[getCellType(x,y)];
 	return res === undefined ? CAVE_FLOOR : res;  // can't use the "||" trick because it might be zero
 },
-
 isCollide = function(x,y) {
-	return isCollideType(getCellType(x,y));
-	
+	return isCollideCell(x/CELL_SIZE|0, y/CELL_SIZE|0);
 },
-isCollideType = function(t) {
-	return t == ROCK || t== GROUND || t==ICE;
+isCollideCell = function(cx,cy) {
+	return collidableTypes[getCellType(cx,cy)];
 },
 
+collidableTypes = {6:1, 3:1, 7:1}, // cant use constants to initialize because {ROCK:1} is "ROCK":1
 AIR = 0,
 BURNED_GRASS = 1,
 GRASS = 2,
@@ -446,7 +445,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
         	otherInd = 1-curBackBuffInd,
         	cctx2 = groundBackCtx[otherInd];
 
-        if (DBG) console.log("reuse drawing at "+x.toFixed(1)+", "+y.toFixed(1)+ "   sxy="+sx.toFixed(1)+","+sy.toFixed(1)+ " wh:"+reuseWidth.toFixed(1)+","+reuseHeight.toFixed(1));
+//        if (DBG) console.log("reuse drawing at "+x.toFixed(1)+", "+y.toFixed(1)+ "   sxy="+sx.toFixed(1)+","+sy.toFixed(1)+ " wh:"+reuseWidth.toFixed(1)+","+reuseHeight.toFixed(1));
         cctx2.clearRect(0,0,BB_WIDTH, BB_HEIGHT);
         cctx2.drawImage( groundBackBuffs[curBackBuffInd],sx,sy, reuseWidth, reuseHeight,
             x, y, reuseWidth, reuseHeight);
@@ -456,7 +455,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
         
         if (dy < 0) {
             // draw horizontal strip at top of buffer
-            if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1)+ " (top of buffer)");
+//            if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1)+ " (top of buffer)");
 //            _drawBackground(cctx2, left, top,       BB_WIDTH, ady);
             drawToBackBuff(cctx2, left, top, 0, 0, BB_WIDTH,ady);
             // the vertical strip should DY down
@@ -464,7 +463,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
             top += ady;
         }
         else {
-            if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+(top+BB_HEIGHT-ady).toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1) + " (bottom of buffer)");
+//            if (DBG) console.log("horiz strip at "+left.toFixed(1)+", "+(top+BB_HEIGHT-ady).toFixed(1)+ "   w,h="+BB_WIDTH+","+ady.toFixed(1) + " (bottom of buffer)");
             // draw horizontal strip at bottom of buffer
 //            _drawBackground(cctx2, left, top+BB_HEIGHT-ady, BB_WIDTH, ady);
             drawToBackBuff(cctx2, left, top+BB_HEIGHT-ady, 
@@ -475,7 +474,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
 
         if (dx < 0) {
 //            left -= PAD;
-            if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (left of buffer)");
+//            if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (left of buffer)");
             // draw vertical strip on the left of buffer
             //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
             drawToBackBuff(cctx2, left, top,
@@ -484,7 +483,7 @@ scrollBackground = function(cx,cy) { // center camera on cx,cy  (world coordinat
         }
         else {
             left += BB_WIDTH-adx;
-            if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (right of buffer)");
+//            if (DBG) console.log("vert strip at "+left.toFixed(1)+", "+top.toFixed(1)+ "   w,h="+adx.toFixed(1)+","+(BB_HEIGHT-ady).toFixed(1) + " (right of buffer)");
             // draw vertical strip on the right of buffer
             //_drawBackground(cctx2, left, top, adx, BB_HEIGHT-ady);
             drawToBackBuff(cctx2, left, top, 

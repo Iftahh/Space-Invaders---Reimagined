@@ -10,7 +10,7 @@ aliensCenters = [],
 alienSpeed = 2.5*SIZE_FACTOR,
 movingDown = 0,
 movingHoriz = 0,
-ALIEN_SHOOT_CHANCE = 0.01,
+ALIEN_SHOOT_CHANCE = 0.001,
 MAX_ALIEN_SHOTS=100,
 updateAliens1 = function(dt) {  // move strategy 1
 	var aliensCollided = false;
@@ -43,9 +43,7 @@ updateAliens1 = function(dt) {  // move strategy 1
 		if (alien.x < -20*CELL_SIZE || alien.x > WORLD_WIDTH + 20*CELL_SIZE) {
 			aliensCollided = true;
 		}
-		var cellX = alien.x / CELL_SIZE | 0, 
-			cellY = alien.y / CELL_SIZE | 0;
-		if (getCellType(cellX, cellY) != AIR) {
+		if (getCellType(alien.x / CELL_SIZE | 0, alien.y / CELL_SIZE | 0) != AIR) {
 			aliensCollided = true;
 			alien.life--;
 			makeHole(alien.x, alien.y, 16)
@@ -56,13 +54,29 @@ updateAliens1 = function(dt) {  // move strategy 1
 			movingDown = 20;
 	}
 },
+explode = function(x,y,size) {
+	jetpack.angle = -90;
+	smoke.speed *= 3;
+	var cs = CELL_SIZE*size;
+	range(12*size*size, function() {
+		jetpack.addParticle(x+irndab(-2*cs,2*cs), y+irndab(-3*cs,cs))
+		smoke.addParticle(x+irndab(-2*cs,2*cs),y+irndab(-2*cs,cs));
+	})
+	jetpack.angle = 90;
+	smoke.speed /= 3;
+}
 
-updateAliens2 = function(dt) {
-},
+//updateAliens2 = function(dt) {
+//	// move in spiral
+//},
 
 renderAliens = function(ctx) {
 	each(aliens, function(alien) {
 		ctx.drawImage(alienImgs[alien.t], alien.x-alien.w/2, alien.y-alien.h/2)
+	})
+	ctx.fillStyle = '#fff';
+	each(alienShots, function(shot) {
+		ctx.fillRect(shot.x-5,shot.y-5, 10,10)
 	})
 },
 updateAliens = function(dt) {
@@ -76,31 +90,60 @@ updateAliens = function(dt) {
 			alien.y += alien.v*dt;
 			if (rnd() < .6)
 				smoke.addParticle(alien.x,alien.y);
-			var cellX = alien.x / CELL_SIZE | 0, 
-			cellY = alien.y / CELL_SIZE | 0;
-			if (isCollide(cellX, cellY) || alien.y > water_y+20*CELL_SIZE) {
-				jetpack.angle = -90;
-				jetpack.speed *= 2;
-				smoke.speed *= 3;
-				range(50, function() {
-					jetpack.addParticle(alien.x+irndab(-3*CELL_SIZE,3*CELL_SIZE), alien.y+irndab(-3*CELL_SIZE,3*CELL_SIZE))
-					smoke.addParticle(alien.x+irndab(-3*CELL_SIZE,3*CELL_SIZE),alien.y+irndab(-3*CELL_SIZE,3*CELL_SIZE));
-				})
-				jetpack.angle = 90;
-				jetpack.speed /= 2;
-				smoke.speed /= 3;
+			if (isCollide(alien.x, alien.y) || alien.y > water_y+20*CELL_SIZE) {
+				explode(alien.x, alien.y,2)
 				aliens.splice(ind,1);
-				makeHole(alien.x, alien.y, 32)
+				makeHole(alien.x, alien.y, CELL_SIZE*6)
 			}
 		}
-		else if (rnd() < ALIEN_SHOOT_CHANCE*dt && alienShots<MAX_ALIEN_SHOTS) {
-			alienShots.push({
-				x: alien.x,
-				y: alien.y,
-				t: alien.t
-			})
+		else {
+			var c5 = CELL_SIZE*10,
+			dx = Player.pos.x - alien.x + rndab(-c5,c5),
+			dy = Player.pos.y - alien.y + rndab(-c5,c5),
+			r = sq(dx)+sq(dy);
+			
+			if (rnd() < ALIEN_SHOOT_CHANCE*dt*(r<200*CELL_SIZE? 2 : 1)   && alienShots.length<MAX_ALIEN_SHOTS) {
+				if (r > CELL_SIZE*CELL_SIZE*9000) {
+					dx = 0; // shoot straight down if player is out of range
+					dy = 1;
+				}
+				else {
+					r = sqrt(r)
+					dx /= r;
+					dy /= r;
+				}
+				alienShots.push({
+					x: alien.x,
+					y: alien.y,
+					t: alien.t,
+					dx: CELL_SIZE*dx,
+					dy: CELL_SIZE*dy
+				})
+			}
 		}
 	});
+	collidableTypes[GRASS] = 1; // shots collide with grass as well
+	each(alienShots, function(shot, ind) {
+		range(2, function() {
+			shot.x += shot.dx*dt;
+			shot.y += shot.dy*dt;
+			var collided = false;
+			if (abs(shot.x-Player.pos.x)+abs(shot.y-Player.pos.y) < MAN_IMG_SIZE) {
+				Player.health--;
+				collided = true;
+			}
+			if (isCollide(shot.x, shot.y)) {
+				collided = true;
+				makeHole(shot.x, shot.y, CELL_SIZE*3)
+			}
+			if (collided) {
+				alienShots.splice(ind, 1);
+				explode(shot.x,shot.y,1);
+				return true;
+			}	
+		})
+	})
+	collidableTypes[GRASS] = 0;
 }
 
 initFu("Beaming Aliens", 4, function() {
@@ -118,7 +161,7 @@ initFu("Beaming Aliens", 4, function() {
 			aliens.push({
 				xi: x,
 				yi: y,
-				i: y*12+x,
+//				i: y*12+x,
 				t: type,
 				w: alienImgs[type].width,
 				h: alienImgs[type].height,
