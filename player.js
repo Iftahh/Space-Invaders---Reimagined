@@ -1,11 +1,17 @@
+
+
+
 var Player = {
-//	pos : vector_create(50 * CELL_SIZE, 900 * CELL_SIZE), // start position - near water
-	 pos: vector_create(820*CELL_SIZE, 30*CELL_SIZE), // start position - top
+	pos : vector_create(50 * CELL_SIZE, 900 * CELL_SIZE), // start position - near water
+//	 pos: vector_create(820*CELL_SIZE, 30*CELL_SIZE), // start position - top
 	// of mountain
 	v : vector_create(),
-	
-	laser_cooldown: 0
+	lookY:0,
+	lookX:0,
+	health: 100,
+	laser_temperature: 0
 },
+LASER_COOLDOWN = 5, LASER_OVERHEAT = 4,
 yellow_man = 0, MAN_IMG_SIZE = 64 * SIZE_FACTOR | 0;
 
 initFu("Chasing Sprites", 4, function() {
@@ -190,6 +196,7 @@ var updatePlayer = function(dt) {
 	var WATER_FRICTION = 0.76, AIR_FRICTION = .99;
 
 	var speed = isUpPressed() ? 1.65 : 0.6;
+
 	Player.leftFace = Player.angle > PI / 2 || Player.angle < -PI / 2
 	if (isLeftPressed()) {
 		Player.v.x = max(-10, Player.v.x - speed);
@@ -216,9 +223,16 @@ var updatePlayer = function(dt) {
 	var dist = vector_multiply(Player.v, dt)
 	Player.pos.add(dist);
 
+	Player.angle = Math.atan2(OffsetY+mouse.y - Player.pos.y + MAN_IMG_SIZE*.72, OffsetX+mouse.x - Player.pos.x);
+	var targetLookX = Math.cos(Player.angle)*CELL_SIZE*25,
+		targetLookY= sin(Player.angle)*CELL_SIZE*25;
+	
+	Player.lookY = avg(Player.lookY,targetLookY)
+	Player.lookX = avg(Player.lookX,targetLookX)
+
 	if (Player.pos.y > water_y) {
 		if (above) {
-			var x = WIDTH / 2;// Player.pos.x;
+			var x = WIDTH / 2 - Player.lookX;// Player.pos.x;
 			// if (x < WIDTH && x>0)
 			springs[springs.length * (1 - x / WIDTH) | 0].velocity = 22 * Player.v.y;
 			// splash some droplets
@@ -256,18 +270,21 @@ var updatePlayer = function(dt) {
 	if (Player.engine_frozen> 0) {
 		Player.engine_frozen--;
 	}
-	Player.angle = Math.atan2(OffsetY+mouse.y - Player.pos.y + MAN_IMG_SIZE*.72, OffsetX+mouse.x - Player.pos.x);
-	if (mouse.pressed && Player.laser_cooldown <= 0) {
+
+	if (mouse.pressed && Player.laser_temperature < LASER_OVERHEAT) {
 		laser.angle = Player.angle*360/TPI;
-		var p = laser.addParticle(Player.pos.x, Player.pos.y- MAN_IMG_SIZE*.72);
-//		p.just_created = true;
-		Player.laser_cooldown += dt;
-	}
-	if (Player.laser_cooldown > 0 && Player.laser_cooldown < 300) {
-		Player.laser_cooldown += dt;
+		laser.addParticle(Player.pos.x, Player.pos.y- MAN_IMG_SIZE*.72);
+		Player.laser_temperature++;
+		if (Player.laser_temperature >= LASER_OVERHEAT) { // just overheat - wait at least cooldown
+			Player.laser_temperature += LASER_COOLDOWN;
+		}
 	}
 	else {
-		Player.laser_cooldown = -20;
+		if (Player.laser_temperature >= LASER_OVERHEAT) {
+			Player.laser_temperature--;
+			if (Player.laser_temperature < LASER_OVERHEAT) // cooled down, ready to fire from start
+				Player.laser_temperature = 0;
+		}
 	}
 	
 };

@@ -10,7 +10,7 @@ getCloudImg = function(brightness) {
 
 initFu("Painting Sky", 10, function() {
 	
-	sky_canvas = render2pixels(sky_width, HEIGHT, function(d) {
+	sky_canvas = render2pixels(sky_width, 2*HEIGHT, function(d) {
 	    
 	    var i=0; // pixel index
 	    range(sky_width, function(x) {
@@ -19,12 +19,12 @@ initFu("Painting Sky", 10, function() {
 			d[i++] = 80; // blue;    		
 			d[i++] = U8;
 	    })
-	    // need on average for all 3 components to get to 255 when y=HEIGHT
-	    // 255-40 = 210  --> need average 210/HEIGHT  colors per pixel 
+	    // need on average for all 3 components to get to 255 when y=2*HEIGHT
+	    // 255-40 = 210  --> need average 210/2*HEIGHT  colors per pixel 
 	    // to give more "painty" look, don't make it linear but random jumps
-	    var chance = 210/HEIGHT,
+	    var chance = 105/HEIGHT,
 	    	row_offset = sky_width*4; // 4 bytes per pixel
-	    duRange(sky_width, HEIGHT-1, function(x,y) {
+	    duRange(sky_width, 2*HEIGHT-1, function(x,y) {
 			d[i] =  (d[i-4]+d[i-row_offset]+irnda(2) >> 1) + (rnd()<chance?irnda(2):0);
 			i++;
 			d[i] = (d[i-4]+d[i-row_offset]+irnda(2) >> 1) + (rnd()<chance?irnda(2):0);

@@ -21,7 +21,7 @@ echo "})()" >> all.js
 java -jar ~/devel/closure_compiler/compiler.jar --compilation_level ADVANCED  --js all.js   --js_output_file js13.js
 rm index.html
 cp ../prepared_index.html index.html
-cp ../man.gif .
+#cp ../man.gif .
 #zip js13.zip js13.js index.html man.gif
 zip js13.zip js13.js index.html
 \ls -l js13.*

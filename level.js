@@ -281,21 +281,60 @@ setCellType = function(x,y,t) {
 	levelPixels[y*levelWidth+x]  = t;
 	x*=CELL_SIZE;
 	y*=CELL_SIZE;
-	minDirtyX = min(minDirtyX, x-CELL_SIZE*2);
-	minDirtyY = min(minDirtyY, y-CELL_SIZE*2);
-	maxDirtyX = max(maxDirtyX, x+CELL_SIZE*2);
-	maxDirtyY = max(maxDirtyY, y+CELL_SIZE*2);
+	var c2 = CELL_SIZE*2;
+	minDirtyX = min(minDirtyX, x-c2);
+	minDirtyY = min(minDirtyY, y-c2);
+	maxDirtyX = max(maxDirtyX, x+c2);
+	maxDirtyY = max(maxDirtyY, y+c2);
 },
 redrawDirty = function() {
 	if (minDirtyX < 10e6) {
-		groundBackCtx[curBackBuffInd].clearRect(minDirtyX - lastRenderX, minDirtyY - lastRenderY, maxDirtyX-minDirtyX-2, maxDirtyY-minDirtyY-2)
+		groundBackCtx[curBackBuffInd].clearRect(minDirtyX - lastRenderX, minDirtyY - lastRenderY, maxDirtyX-minDirtyX-3, maxDirtyY-minDirtyY-3)
 		drawToBackBuff(groundBackCtx[curBackBuffInd], 
 				minDirtyX, minDirtyY, 
-				minDirtyX - lastRenderX-1, minDirtyY - lastRenderY-1,  maxDirtyX-minDirtyX, maxDirtyY-minDirtyY);
+				minDirtyX - lastRenderX-1, minDirtyY - lastRenderY-1,  maxDirtyX-minDirtyX+1, maxDirtyY-minDirtyY+1);
 		
 		minDirtyX=minDirtyY=10e6;
 		maxDirtyX=maxDirtyY=-10e6;
 	}
+},
+vertStrip = function(x1,x2,yTop,yBottom, type, doneAlready) {
+	for (var yi=yTop; yi<yBottom; yi+=CELL_SIZE) {
+		var yOffs = (yi/CELL_SIZE|0)*levelWidth,
+			cells = [yOffs+(x1/ CELL_SIZE|0), yOffs+(x2/ CELL_SIZE|0)]
+		for (var c=0; c<2; c++) {
+			var cell = cells[c];
+			if (doneAlready[cell]) {
+				continue;
+			}
+			doneAlready[cell] = 1;
+			var atCell = levelPixels[cell]
+			if (atCell == ROCK || atCell == AIR || atCell==type) {
+				continue; // rock is unbreakable, and air is already as broken as can be, and if its already the type we want then nothing to do 
+			}
+			if (type == CAVE_FLOOR && atCell != GROUND) {  // cave floor can only be in place of ground
+				type = CAVE; 
+			}
+			if (type == CAVE && (atCell != GROUND && atCell != CAVE && atCell != CAVE_FLOOR)) {// cave can only replace ground or cave floor
+				type = AIR;
+			}
+			levelPixels[cell] = type;
+		}
+	}
+},
+makeHole = function(x,y,r) {
+	var r2 = sq(r), done={};
+	for (var xi=0; xi<r; xi++) {
+		var dy = sqrt(r2-sq(xi)),
+			yFloor = y+dy - min(dy*.4, CELL_SIZE*4);
+		vertStrip(x+xi, x-xi, y-dy, yFloor, CAVE,done);
+		vertStrip(x+xi, x-xi, yFloor, y+dy, CAVE_FLOOR,done);
+	}
+	r += CELL_SIZE*2;
+	minDirtyX = min(minDirtyX, x-r);
+	minDirtyY = min(minDirtyY, y-r);
+	maxDirtyX = max(maxDirtyX, x+r);
+	maxDirtyY = max(maxDirtyY, y+r);
 },
 getCellType = function(x,y) {
 	if (y<0) { 

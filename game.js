@@ -83,7 +83,33 @@ jetpack = ParticlePointEmitter(350, {
 	area: 0.1
 }),
 
+shotsPart = ParticlePointEmitter(50, {
+	position: vector_create(),
+	angle: 90,
+	angleRandom: 10,
+	duration: -1,
+//	finishColor: [200, 45, 10, 0],
+//	finishColorRandom: [40,40,40,0],
+//	startColor: [220, 188, 88, 1],
+//	startColorRandom: [32, 35, 38, 0],
+	colorEdge: 'rgba(40,20,10,0)',
+	gravity: 0,
+	lifeSpan: 1,
+	positionRandom: vector_create(3,3),
+	sharpness: 22,
+	sharpnessRandom: 12,
+	size: 30*SIZE_FACTOR|0,
+	finishSize: 15*SIZE_FACTOR|0,
+	sizeRandom: 5*SIZE_FACTOR,
+	speed: 4*SIZE_FACTOR,
+	speedRandom: 1*SIZE_FACTOR,
+	emissionRate: 140,
+	area: 0.1
+}),
+
+
 sparks = ParticlePointEmitter(250, {
+	active:false,
 	position: vector_create(),
 	angle: 0,
 	angleRandom: 360,
@@ -321,8 +347,8 @@ animFrame = function(t) {
 	
 	// no more updates to player pos at this frame - update camera to point to player
 	
-	OffsetY = Player.pos.y - HEIGHT/2 |0;
-	OffsetX = Player.pos.x - WIDTH/2 |0;
+	OffsetY = Player.pos.y - HEIGHT/2 +Player.lookY |0;
+	OffsetX = Player.pos.x - WIDTH/2 +Player.lookX |0;
 	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 	if (shouldShowSnow) {
@@ -393,13 +419,18 @@ animFrame = function(t) {
 	}
 
 
+	skyCtx.save()
+	var skyX = -.3*OffsetX, skyY = minmax(-1,0, -1.1*OffsetY/WORLD_HEIGHT)*HEIGHT;
+	skyCtx.translate(skyX, skyY)
+	skyCtx.fillRect(-skyX,-skyY,WIDTH,HEIGHT);
+	skyCtx.restore();
 //	groundBackCtx[curBackBuffInd].fillStyle = "#f00";
 //	groundBackCtx[curBackBuffInd].fillRect(Player.pos.x - lastRenderX -1, Player.pos.y -lastRenderY -1, 3,3);
 
 //	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)	
 //	drawToBackBuff(mountainCtx, OffsetX/CELL_SIZE|0, OffsetY/CELL_SIZE|0, 0,0, BB_WIDTH,BB_HEIGHT);
 	redrawDirty();
-	scrollBackground(Player.pos.x, Player.pos.y);
+	scrollBackground(Player.pos.x+ Player.lookX, Player.pos.y+Player.lookY);
 	
 	
     RQ(animFrame);
@@ -408,6 +439,7 @@ animFrame = function(t) {
     // TODO: remove later
 	var text= "Wind: "+wind;
 	if (DBG) {
+		text+= "  Sky: "+skyX.toFixed(1)+","+skyY.toFixed(1);
     	text+= "  Player: "+Player.pos.x.toFixed(0)+","+Player.pos.y.toFixed(0);
     	text+= "  V: "+Player.v.x.toFixed(1)+","+Player.v.y.toFixed(1);
 		if (t - t0 > 5000) {

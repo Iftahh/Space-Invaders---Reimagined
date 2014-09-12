@@ -5,10 +5,13 @@ var alienImgs = [[47, -67108864, 42, -1442840576, 170, -1442840576, 170, -144284
               [682, -1434451968, 3071, -1414529024, 16362, -1430519808, 44760746, -1431655808, 44739242, -1431655552, 48933546, -1431654464, 732605098, -1431655432, 1051372202, -1431655430, 984263338, -1431655686, 715806378, -1433032006, 715806058, -1454003542, 715825002, -1443452246, 715824986, -1510561110, 715827882, -1431655766, 1789569706, -1431655766, 447326890, -1431741786, 357935773, 1990874452, 1747613, 1990890496, 1747605, 1454023936, 22697386, -1432966848, 27935066, -1543411136, 27934746, -1543411136, 22697301, 1414899008, 1742080, 5936384, 1485312, 5936384, 1399040, 5854208, 349440, 5586944]],
               
 aliens = [],
+alienShots = [],
 aliensCenters = [],
 alienSpeed = 2.5*SIZE_FACTOR,
 movingDown = 0,
 movingHoriz = 0,
+ALIEN_SHOOT_CHANCE = 0.01,
+MAX_ALIEN_SHOTS=100,
 updateAliens1 = function(dt) {  // move strategy 1
 	var aliensCollided = false;
 	if (movingDown > 0) {
@@ -44,9 +47,8 @@ updateAliens1 = function(dt) {  // move strategy 1
 			cellY = alien.y / CELL_SIZE | 0;
 		if (getCellType(cellX, cellY) != AIR) {
 			aliensCollided = true;
-			duRange(3,3, function(x,y) {
-				setCellType(cellX+x-1, cellY+y-1, AIR);
-			})
+			alien.life--;
+			makeHole(alien.x, alien.y, 16)
 		}
 	})
 	if (aliensCollided) {
@@ -70,7 +72,7 @@ updateAliens = function(dt) {
 			smoke.addParticle(alien.x,alien.y);
 		}
 		if (alien.life <= 0  || alien.y > water_y+20*CELL_SIZE) {
-			alien.v = min(CELL_SIZE*2, (alien.v|| 0) + .3);
+			alien.v = min(CELL_SIZE*3, (alien.v|| 0) + .3);
 			alien.y += alien.v*dt;
 			if (rnd() < .6)
 				smoke.addParticle(alien.x,alien.y);
@@ -88,10 +90,15 @@ updateAliens = function(dt) {
 				jetpack.speed /= 2;
 				smoke.speed /= 3;
 				aliens.splice(ind,1);
-				duRange(3,3, function(dx,dy) {
-					setCellType(cellX+dx-1, cellY+dy-1, AIR);
-				})
+				makeHole(alien.x, alien.y, 32)
 			}
+		}
+		else if (rnd() < ALIEN_SHOOT_CHANCE*dt && alienShots<MAX_ALIEN_SHOTS) {
+			alienShots.push({
+				x: alien.x,
+				y: alien.y,
+				t: alien.t
+			})
 		}
 	});
 }
