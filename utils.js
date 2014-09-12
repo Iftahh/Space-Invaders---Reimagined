@@ -157,8 +157,28 @@ if (DBG) {
 		console.warn("Error: "+errorMsg+"\n URL: "+ url+"\n Line: "+lineNumber);
 	    return false;
 	}
-	savePng = function(c) {
+	window.savePng = function(c) {
 		document.location.href =  c.toDataURL('image/png').replace("image/png", "image/octet-stream")
+	}
+	window.globalDetect = function() {
+		if (window.standard_globals) {
+			var _keys = {}
+			for (var i=0; i<standard_globals.length; i++) {
+				_keys[standard_globals[i]] = 1;
+			}
+			for (var k in window) {
+				if (!_keys[k]) {
+					console.log("Leak: ",k);
+				}
+			}
+		}
+		else {
+			var _keys = [];
+			for (var k in window) {
+				_keys.push('"'+k+'"');
+			}
+			console.log("standard_globals = ["+_keys.join(", ")+"]")
+		}
 	}
 }
 

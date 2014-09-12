@@ -9,6 +9,7 @@ cat ../utils.js >> all.js
 cat ../gfx_utils.js >> all.js
 cat ../particle.js >> all.js
 cat ../player.js >> all.js
+cat ../aliens.js >> all.js
 cat ../sky.js >> all.js
 cat ../ground.js >> all.js
 cat ../level.js >> all.js

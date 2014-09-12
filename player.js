@@ -1,6 +1,6 @@
 var Player = {
-	pos : vector_create(50 * CELL_SIZE, 900 * CELL_SIZE), // start position - near water
-//	 pos: vector_create(820*CELL_SIZE, 40*CELL_SIZE), // start position - top
+//	pos : vector_create(50 * CELL_SIZE, 900 * CELL_SIZE), // start position - near water
+	 pos: vector_create(820*CELL_SIZE, 30*CELL_SIZE), // start position - top
 	// of mountain
 	v : vector_create(),
 	
@@ -8,57 +8,39 @@ var Player = {
 },
 yellow_man = 0, MAN_IMG_SIZE = 64 * SIZE_FACTOR | 0;
 
-initFu("Chasing Sprites", 10, function() {
+initFu("Chasing Sprites", 4, function() {
 
 	var manImage = intArrayToImg([0, 0, 0, 44016, 0, 0, 176124, 0, 0, 152917, 0, 0, 177556, 0, 0, 174826, 0, 1024, 174680, 5119, -2096, 174752, 1365, 1431655764, 175088, 5467, -445688492, 437244, 86, -50380800, 437247, 6, -1124253696, 1747967, 1, -1359396864, 437247, 0, 1788870656, 1485823, 0, 444596224, 1485823, 0, 83886080, 1485567, 0, 0, 1747711, 0, 0, 1485804, 0, 0, 48175, 0, 0, 15407, 0, 0, 11307, 0, 0, 11304, 0, 0, 11307, 0, 0, 11051, 0, 0],
 				48,24),
-	//manImage = new Image(),
 
 	man_canvas = createCanvas(2 * MAN_IMG_SIZE, MAN_IMG_SIZE),
 	ctx = Ctx(man_canvas);
 
-//manImage.onload = function() {
 	ctx.drawImage(manImage, 0, 0, 2 * MAN_IMG_SIZE, MAN_IMG_SIZE);
 	emboss(ctx, true);
-//	convolute(ctx, ctx,  
-//			[-1,  0,  0,  0,  0,
-//		     0, -2,  0,  0,  0,
-//		     0,  0,  3,  0,  0,
-//		     0,  0,  0,  0,  0,
-//		     0,  0,  0,  0, 0]
-//			);
 	yellow_man = createCanvas(2 * MAN_IMG_SIZE, MAN_IMG_SIZE);
-	// red_man = createCanvas( 2*MAN_IMG_SIZE,MAN_IMG_SIZE);
-	// var rctx = Ctx(red_man);
 	var bctx = Ctx(yellow_man), pixels = ctx.getImageData(0, 0,
 			2 * MAN_IMG_SIZE, MAN_IMG_SIZE).data,
-	// redid = rctx.createImageData( 2*MAN_IMG_SIZE,MAN_IMG_SIZE),
 	yellowid = bctx.createImageData(2 * MAN_IMG_SIZE, MAN_IMG_SIZE),
-	// red = redid.data,
 	yellow = yellowid.data, i = 0;
 	duRange(2 * MAN_IMG_SIZE, MAN_IMG_SIZE, function() {
-		// red[i] =
 		yellow[i] = pixels[i];
 		i++;
-		// red[i]=pixels[i]/2;
 		yellow[i] = pixels[i];
 		i++;
-		// red[i]=
 		yellow[i] = pixels[i] / 2;
 		i++;
-		// red[i]=
 		yellow[i] = pixels[i];
 		i++;
 	});
-	// rctx.putImageData(redid,0,0)
 	bctx.putImageData(yellowid, 0, 0);
+	
+	addWaveFrame()
 });
-//};
-//manImage.src = './man.gif';
 	
 
-var draw_man = function(color, v, angle) {
-	var man = color ? red_man : yellow_man;
+var draw_man = function(v, angle) {
+	var man = yellow_man;
 	spritesCtx.save();
 	spritesCtx.translate(v.x - MAN_IMG_SIZE / 2, v.y - MAN_IMG_SIZE);
 	if (Player.leftFace) {
@@ -160,18 +142,23 @@ checkPlayerCollision = function() {
 	}
 },
 
-SPACE = 32, KEYS = {},
+KEYS = {},
 
 updateFromKeys = function(e) {
 	KEYS[e.keyCode] = e.type == "keydown";
 	if (e.keyCode == 32 || e.keyCode >= 37 && e.keyCoe <= 40)
 		e.preventDefault();
-}, isLeftPressed = function() {
+}, 
+isLeftPressed = function() {
 	return KEYS[37] || // left arrow
 	KEYS[65] || KEYS[83] // 'a' or 's';
-}, isRightPressed = function() {
+}, 
+isRightPressed = function() {
 	return KEYS[39] || // right arrow
 	KEYS[68] || KEYS[70] // 'd' or 'f'
+}, 
+isUpPressed = function() {
+	return KEYS[32] || KEYS[87] || KEYS[69]; // Space or 'w' or 'e'
 };
 
 DC.onkeydown = updateFromKeys;
@@ -202,21 +189,22 @@ DC.onmouseup= function(e) {
 var updatePlayer = function(dt) {
 	var WATER_FRICTION = 0.76, AIR_FRICTION = .99;
 
-	var speed = KEYS[SPACE] ? 1.65 : 0.6;
+	var speed = isUpPressed() ? 1.65 : 0.6;
+	Player.leftFace = Player.angle > PI / 2 || Player.angle < -PI / 2
 	if (isLeftPressed()) {
 		Player.v.x = max(-10, Player.v.x - speed);
-//		Player.leftFace = true;
+		if (Player.onGround)
+			Player.leftFace = true;
 	} else if (isRightPressed()) {
 		Player.v.x = min(10, Player.v.x + speed);
-//		Player.leftFace = false;
-	} else {
-		Player.leftFace = Player.angle > PI / 2 || Player.angle < -PI / 2
-	}
+		if (Player.onGround)
+			Player.leftFace = false;
+	} 
 	if (!Player.onGround && Player.inWind) {
 		Player.v.x += windForce(Wind(), Player.v.x, .02);
 	}
 
-	jetpack.active = !Player.engine_frozen && KEYS[SPACE];
+	jetpack.active = !Player.engine_frozen && isUpPressed();
 	var above = Player.pos.y < water_y;
 	Player.v.scale(above ? AIR_FRICTION : WATER_FRICTION) // air or water
 															// friction
@@ -233,7 +221,6 @@ var updatePlayer = function(dt) {
 			var x = WIDTH / 2;// Player.pos.x;
 			// if (x < WIDTH && x>0)
 			springs[springs.length * (1 - x / WIDTH) | 0].velocity = 22 * Player.v.y;
-			console.log("wave " + 22 * Player.v.y)
 			// splash some droplets
 			water.active = true;
 			water.position.x = Player.pos.x;

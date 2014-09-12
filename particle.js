@@ -42,7 +42,7 @@ vector_sub = function (vector1, vector2) {
 Particle = function() {
 	return {
 		// really everything is overwritten - no need setting defaults
-	    position: vector_create(0,0),
+	    position: vector_create()
 //	    direction: [0,0],
 //	    size: 0,
 //	    sizeSmall: 0,
@@ -84,7 +84,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 //	    sharpness: 35,							  // how sharp (percent) will the particle "ball" be (0 - very fuzzy)
 //	    sharpnessRandom: 12,
 			
-	    forcePoints: 0, // pairs of weight and location.  positive weight attracts, negative weight pushes
+//	    forcePoints: 0, // pairs of weight and location.  positive weight attracts, negative weight pushes
 	    wind: 0, // function returning value of wind - can change over time
 	    area: 0.3, // used to calculate wind affect
 	
@@ -94,11 +94,11 @@ ParticlePointEmitter = function(maxParticles, options) {
 				halfSize = size >> 1,
 				x = p.position.x|0,
 				y = p.position.y|0,
-				radgrad = context.createRadialGradient( x + halfSize, y + halfSize, p.sizeSmall, x + halfSize, y + halfSize, halfSize);  
+				radgrad = context.createRadialGradient( x, y, p.sizeSmall, x, y, halfSize);  
 			radgrad.addColorStop( 0, p.drawColor );   
 			radgrad.addColorStop( 1, p.drawColorEdge );
 			context.fillStyle = radgrad;
-		  	context.fillRect( x, y, size, size );
+		  	context.fillRect( x-halfSize, y-halfSize, size, size );
 	    },
 
 	
@@ -246,21 +246,21 @@ ParticlePointEmitter = function(maxParticles, options) {
 	                											 currentParticle.area);
 	                }
 	
-	                if (that.forcePoints) {
-		                for (var i=0; i<that.forcePoints.length; i++) {
-		                    var fp = that.forcePoints[i];
-		                    var weight = fp[0];
-		                    var location = fp[1];
-		                    var dir = vector_sub(currentParticle.position, location);
-		//                    var dist = vector_len(dir);
-		//                    if (dist == 0) {
-		//                        continue;
-		//                    }
-		                    // todo: force may depend on dist (ie. farther is weaker or other)
-		                    var force = vector_multiply(dir, weight/**1/dist*/);
-		                    currentParticle.direction = vector_add( currentParticle.direction, force);
-		                }
-	                }
+//	                if (that.forcePoints) {
+//		                for (var i=0; i<that.forcePoints.length; i++) {
+//		                    var fp = that.forcePoints[i];
+//		                    var weight = fp[0];
+//		                    var location = fp[1];
+//		                    var dir = vector_sub(currentParticle.position, location);
+//		//                    var dist = vector_len(dir);
+//		//                    if (dist == 0) {
+//		//                        continue;
+//		//                    }
+//		                    // todo: force may depend on dist (ie. farther is weaker or other)
+//		                    var force = vector_multiply(dir, weight/**1/dist*/);
+//		                    currentParticle.direction = vector_add( currentParticle.direction, force);
+//		                }
+//	                }
 					currentParticle.position.add( currentParticle.direction );
 					currentParticle.timeToLive -= delta;
 					

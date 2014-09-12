@@ -1,5 +1,5 @@
 var SZ = ground_pattern_size,
-	TXT = "Chiseling rocks",
+	TXT = "Chiseling Rocks",
 	cave_canvas,
 	grass_pattern,
 	burned_grass_pattern,

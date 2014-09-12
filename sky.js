@@ -47,14 +47,14 @@ initFu("Blowing Clouds", 10, function() {
 		cloud_images[brightness] = [];
 		var b0 = 30+brightness*4;
 		for (var cloudInd=0; cloudInd<CLOUDS_ALTERNATIONS; cloudInd++) {
-			img = createCanvas(size*2, size),
-			ctx = Ctx(img);
+			var img = createCanvas(size*2, size),
+				ctx = Ctx(img);
 			ctx.scale(2,1);
 			for (var ball=0; ball<4; ball++) {
-				var bx = irndab(rad2,size-rad2), by = irndab(rad2,size-rad2);
-				radgrad = ctx.createRadialGradient( bx,by, rad1, bx,by, rad2);
-				var b = b0 + irndab(-10,10);
-				var col1 = 'rgba('+b+','+b+','+b+',.8)',
+				var bx = irndab(rad2,size-rad2), by = irndab(rad2,size-rad2),
+					radgrad = ctx.createRadialGradient( bx,by, rad1, bx,by, rad2),
+					b = b0 + irndab(-10,10),
+					col1 = 'rgba('+b+','+b+','+b+',.8)',
 					col2 = 'rgba('+b+','+b+','+b+',0)';
 				radgrad.addColorStop( 0, col1 );   
 				radgrad.addColorStop( 1, col2 );
@@ -64,8 +64,11 @@ initFu("Blowing Clouds", 10, function() {
 				ctx.fill()
 			}
 			
+			
 			cloud_images[brightness].push(img);
 		}
 	}
+	
+	addWaveFrame()
 })
 

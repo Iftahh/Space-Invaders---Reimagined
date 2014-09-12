@@ -42,9 +42,9 @@ jetpack = ParticlePointEmitter(350, {
 	size: 30*SIZE_FACTOR|0,
 	finishSize: 75*SIZE_FACTOR|0,
 	colorEdge: 'rgba(40,20,10,0)',
-	sizeRandom: 4,
-	speed: 4,
-	speedRandom: 1,
+	sizeRandom: 5*SIZE_FACTOR,
+	speed: 4*SIZE_FACTOR,
+	speedRandom: 1*SIZE_FACTOR,
 	emissionRate: 140,
 	startColor: [220, 188, 88, 1],
 	startColorRandom: [32, 35, 38, 0],
@@ -63,7 +63,7 @@ jetpack = ParticlePointEmitter(350, {
 				smoke.addParticle(particle.position.x, particle.position.y);
 
 				if (cell == ICE) {
-					water.speed = 3;
+					water.speed = 3*SIZE_FACTOR;
 					water.addParticle(particle.position.x, particle.position.y);
 					setCellType(cellX, cellY, AIR);
 				}
@@ -83,6 +83,27 @@ jetpack = ParticlePointEmitter(350, {
 	area: 0.1
 }),
 
+sparks = ParticlePointEmitter(250, {
+	position: vector_create(),
+	angle: 0,
+	angleRandom: 360,
+	duration: -1,
+	finishColor: [230, 150, 150, .1],
+	finishColorRandom: [20,20,20,.1],
+	gravity: vector_create(0,.4),
+	lifeSpan: 2.5,
+	positionRandom: vector_create(3,3),
+	sharpness: 82,
+	sharpnessRandom: 12,
+	size: 8*SIZE_FACTOR|0,
+	finishSize: 2*SIZE_FACTOR|0,
+	speed: 5*SIZE_FACTOR,
+	speedRandom: 1*SIZE_FACTOR,
+	startColor: [250, 160, 160, 1],
+	startColorRandom: [5, 5, 5, 0],
+	wind: PWind,
+	area: 0.1
+}),
 
 laser = ParticlePointEmitter(100, {
 	active: false,
@@ -103,31 +124,47 @@ laser = ParticlePointEmitter(100, {
 		if (particle.timeToLive < 0) return;
 		particle.prev = vector_sub(particle.position, particle.direction); // one is added before this function
 		for (var i=0; i<6 && particle.timeToLive; i++) {
-			if (particle.position.y > water_y) {
+			var x = particle.position.x,
+				y = particle.position.y;
+			// collision with sea
+			if (y > water_y) {
 				particle.timeToLive *= .8;
 				particleHitWater(particle)
 			}
-			// check collision
-			var cellX = (particle.position.x/ CELL_SIZE|0)+1,
-				cellY = (particle.position.y/CELL_SIZE|0)+1,
+			// check collision with aliens
+			each(aliens, function(alien, ind) {
+				var ax = alien.x-alien.w/2,
+					ay = alien.y-alien.h/2;
+				if (x > ax && x < ax+alien.w && y > ay && y < ay+alien.h) {
+					particle.timeToLive = 0;
+					sparks.addParticle(x, y);
+					alien.life--;
+				}
+			})
+			// check collision moutain
+			var cellX = (x/ CELL_SIZE|0)+1,
+				cellY = (y/CELL_SIZE|0)+1,
 				cell = getCellType(cellX, cellY)
 			if (cell == GRASS || cell == ICE) {
-				smoke.addParticle(particle.position.x, particle.position.y);
+				smoke.addParticle(x, y);
 	
 				if (cell == ICE) {
-					water.speed = 3;
-					water.addParticle(particle.position.x, particle.position.y);
+					particle.timeToLive *= .8;
+					water.speed = 3*SIZE_FACTOR;
+					water.addParticle(x, y);
 					setCellType(cellX, cellY, AIR);
 				}
 				else {
 					particle.timeToLive = 0;
 					// burn vegetation
 					setCellType(cellX, cellY, rnd()<.8? BURNED_GRASS : AIR);
+					continue;
 				}
-				
 			}
 			else if (isCollideType(cell)) {
 				particle.timeToLive = 0;
+				sparks.addParticle(x, y);
+				continue;
 			}
 			particle.position.add( particle.direction );
 		}
@@ -140,7 +177,7 @@ laser = ParticlePointEmitter(100, {
 
 
 
-snow = ParticlePointEmitter(450, {
+snow = ParticlePointEmitter(SNOW_PARTICLES, {
 	active:true,
 	position: vector_create(Player.pos.x,-60*CELL_SIZE),
 	angle:90,
@@ -155,9 +192,9 @@ snow = ParticlePointEmitter(450, {
 	sharpnessRandom: 12,
 	size: 20*SIZE_FACTOR|0,
 	finishSize: 10*SIZE_FACTOR|0,
-	sizeRandom: 2,
+	sizeRandom: 2*SIZE_FACTOR,
 	colorEdge: 'rgba(40,40,40,0)',
-	speed: .2,
+	speed: .2*SIZE_FACTOR,
 	speedRandom: 0.1,
 	startColor: [220, 220, 230, 1],
 	startColorRandom: [22, 22, 22, 0],
@@ -181,7 +218,7 @@ clouds = ParticlePointEmitter(350, {
 	size: 280*SIZE_FACTOR|0,
 	finishSize: 280*SIZE_FACTOR|0,
 	sizeRandom: 30,
-	speed: .2,
+	speed: .2*SIZE_FACTOR,
 	speedRandom: 0.1,
 	wind: Wind,
 	area: .3,
@@ -219,9 +256,9 @@ smoke = ParticlePointEmitter(250, {
 	sharpnessRandom: 12,
 	size: 45*SIZE_FACTOR|0,
 	finishSize: 60*SIZE_FACTOR|0,
-	sizeRandom: 6,
+	sizeRandom: 6*SIZE_FACTOR,
 	colorEdge: 'transparent',
-	speed: 1.2,
+	speed: 1.2*SIZE_FACTOR,
 	speedRandom: .1,
 	startColor: [220, 220, 220, 1],
 	startColorRandom: [22, 22, 22, 0],
@@ -248,7 +285,7 @@ water = ParticlePointEmitter(250, {
 	finishSize: 8,
 	sizeRandom: 1,
 	emissionRate: 100,
-	speed: 2,
+	speed: 2*SIZE_FACTOR,
 	colorEdge: 'rgba(140,140,255,0)',
 	speedRandom: .5,
 	startColor: [60, 80, 120, .9],
@@ -294,11 +331,13 @@ animFrame = function(t) {
 	}
 	
 
-	jetpack.position.x = Player.pos.x -(Player.leftFace ? 5: 15);
-	jetpack.position.y = Player.pos.y-25;
+	jetpack.position.x = Player.pos.x -(Player.leftFace ? -5: 5);
+	jetpack.position.y = Player.pos.y-15;
 	updateWaves(dt);
-	jetpack.update(dt);
 	laser.update(dt);
+	updateAliens(dt);   // aliens can add jetpack and smoke so must update before them
+	jetpack.update(dt);
+	sparks.update(dt);
 	water.update(dt); // water update must come after jetpack and laser because they can create water
 	smoke.update(dt); // same as water
 	if (shouldShowSnow) {
@@ -315,6 +354,7 @@ animFrame = function(t) {
 	spritesCtx.globalCompositeOperation = "lighter";
 	jetpack.renderParticles(spritesCtx);
 	spritesCtx.restore()
+	sparks.renderParticles(spritesCtx);
 	spritesCtx.beginPath()
 	laser.renderParticles(spritesCtx);
 	spritesCtx.strokeStyle = 'rgba(250, 60, 60, .4)';
@@ -323,15 +363,15 @@ animFrame = function(t) {
 	spritesCtx.lineWidth = 2;
 	spritesCtx.strokeStyle = 'rgba(255,190,190,.9)';
 	spritesCtx.stroke();
-
 	smoke.renderParticles(spritesCtx);
+	renderAliens(spritesCtx);
 	if (shouldShowSnow) {
 		snow.renderParticles(skySpritesCtx);
 		clouds.renderParticles(skySpritesCtx);
 	}
 
 	if (yellow_man) {
-		draw_man(0, Player.pos, Player.angle);
+		draw_man(Player.pos, Player.angle);
 	}
 
 	waterCtx.save()

@@ -258,25 +258,22 @@ emboss = function(ctx, bottomRightBright) {
 
 
 
-intArrayToImg = function(arr, width,height) {
+intArrayToImg = function(arr, width,height, rgbBits) {
 	return render2pixels(width,height, function(d) {
 		var i=0;
 		
-		for (var y=0; y<height; y++) {
-			for (var x=0; x<width; ) {
-				var num = arr[i++];
-				var runOffset = y*width+x;
-				for (var b=0; b<16; b++) {  // each num is a strip of 16 pixels
-					var val = (num & 3) * U8/3 |0,
-						offset = (runOffset+15-b)*4;
-					num >>= 2;
-					d[offset++] = val;
-					d[offset++] = val;
-					d[offset++] = val;
-					d[offset++] = (val == 0) ? 0: U8; // alpha is all or nothing
-				}
-				x+=16;
+		for (var j=0; j<height*width; ) {
+			var num = arr[i++];
+			for (var b=0; b<16; b++) {  // each num is a strip of 16 pixels
+				var val = (num & 3) * U8/3 |0,
+					offset = (j+15-b)*4;
+				num >>= 2;
+				d[offset++] = (~rgbBits&1)? val/2 : val;
+				d[offset++] = (~rgbBits&2)? val/2 : val;
+				d[offset++] = (~rgbBits&4)? val/2 : val;
+				d[offset++] = (val == 0) ? 0: U8; // alpha is all or nothing
 			}
+			j+=16;
 		} 
 	})
 }
@@ -284,7 +281,7 @@ intArrayToImg = function(arr, width,height) {
 if (DBG) {
 	/**
 	 * Convert img to byte string - 2bits per pixel  - 00 = transparent, 1,2,3 - different levels of gray
-	 * width should be divisible by 16
+	 * width*height should be divisible by 16
 	 */
 	convertImgToIntArray = function(img) {
 		// convert Image to Canvas
@@ -295,34 +292,29 @@ if (DBG) {
 		var	pixels = getPixels(ctx).data,
 			result = [], 
 			i=0; // pixels byte index
-		for (var y=0; y<img.height; y++) {
-			var collector = 0;
-			for (var x=0; x<img.width; x++) {
-				var r = pixels[i++],
-					g = pixels[i++],
-					b = pixels[i++],
-					a = pixels[i++];
-				if (a > 10) {
-					var hsv = rgb2hsv(r,g,b),
-						rgb = hsv2rgb(hsv.h, 0, hsv.v), // grayscale
-						twobit = 0;
-					r = rgb.r;
-					if (r > .66*U8) {
-						twobit = 3;
-					}
-					else if (r > U8/3) {
-						twobit = 2;
-					}
-					else twobit = 1;
-					
-					collector += twobit;
+		var collector = 0;
+		for (var j=0; j<img.height*img.width; j++) {
+			var r = pixels[i++],
+				g = pixels[i++],
+				b = pixels[i++],
+				a = pixels[i++];
+			if (a > 10) {
+				var p = (r+g+b)/3;
+				if (p > .66*U8) {
+					twobit = 3;
 				}
-				if ((x+1) % 16 == 0) {
-					result.push(collector);
-					collector = 0;
+				else if (p > U8/3) {
+					twobit = 2;
 				}
-				collector <<= 2;
+				else twobit = 1;
+				
+				collector += twobit;
 			}
+			if ((j+1) % 16 == 0) {
+				result.push(collector);
+				collector = 0;
+			}
+			collector <<= 2;
 		}
 		return result;
 	}
