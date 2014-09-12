@@ -317,11 +317,11 @@ animFrame = function(t) {
 	spritesCtx.restore()
 	spritesCtx.beginPath()
 	laser.renderParticles(spritesCtx);
-	spritesCtx.strokeStyle = 'rgba(220, 40, 40, .5)';
+	spritesCtx.strokeStyle = 'rgba(250, 60, 60, .4)';
 	spritesCtx.lineWidth = 7;
 	spritesCtx.stroke();
 	spritesCtx.lineWidth = 2;
-	spritesCtx.strokeStyle = 'rgba(255,225,225,.8)';
+	spritesCtx.strokeStyle = 'rgba(255,190,190,.9)';
 	spritesCtx.stroke();
 
 	smoke.renderParticles(spritesCtx);
