@@ -36,7 +36,12 @@ vector_sub = function (vector1, vector2) {
 //vector_len2= function(vector) {
 //    return sq(vector.x) + sq(vector.y);
 //}
-
+rgba = function(arr, alphaOverride) {
+	return "rgba("+[  minmax(0,U8, arr[ 0 ]|0),
+                      minmax(0,U8, arr[ 1 ]|0),
+                      minmax(0,U8, arr[ 2 ]|0),
+                      minmax(0,1, alphaOverride!=undefined? alphaOverride : arr[ 3 ].toFixed(2))].join(',') + ")"; 
+},
 
 // Individual particle
 Particle = function() {
@@ -107,7 +112,7 @@ ParticlePointEmitter = function(maxParticles, options) {
 		        maxParticles: maxParticles,
 		        particles: [],
 		        graveyard: [],
-		        active: true,
+		        active: false,
 
 		//        this.position = vector_create(300, 300);
 		        positionRandom:  vector_create(0, 0),
@@ -138,6 +143,9 @@ ParticlePointEmitter = function(maxParticles, options) {
 	        }
 	        if (!this.emissionRate) {
 	        	this.emissionRate = this.maxParticles / this.lifeSpan;
+	        }
+	        if (this.colorEdge) {
+	        	this.colorEdge = rgba(this.colorEdge)
 	        }
 	    },
 		
@@ -284,13 +292,8 @@ ParticlePointEmitter = function(maxParticles, options) {
 //	                    console.log("Error");
 //	                }
 					if (currentParticle.color) {
-						// Calculate the rgba string to draw.
-						var draw = "rgba("+[  minmax(0,255, currentParticle.color[ 0 ]|0),
-						                      minmax(0,255, currentParticle.color[ 1 ]|0),
-						                      minmax(0,255, currentParticle.color[ 2 ]|0)].join(',');
-						
-						currentParticle.drawColorEdge = that.colorEdge || (draw + ",0)")
-						currentParticle.drawColor = draw + ','+minmax(0,1, currentParticle.color[ 3 ].toFixed(2)) + ")";
+						currentParticle.drawColorEdge = that.colorEdge || rgba(currentParticle.color,0);
+						currentParticle.drawColor = rgba(currentParticle.color); 
 					}
 				} else {
 					that.particles.splice(particleIndex,1);

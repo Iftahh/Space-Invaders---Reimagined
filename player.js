@@ -8,11 +8,18 @@ var Player = {
 	v : vector_create(),
 	lookY:0,
 	lookX:0,
-	health: 100,
+	health: 25,
+	maxHealth: 25,
 	laser_temperature: 0
 },
 LASER_COOLDOWN = 5, LASER_OVERHEAT = 4,
-yellow_man = 0, MAN_IMG_SIZE = 64 * SIZE_FACTOR | 0;
+yellow_man = 0, MAN_IMG_SIZE = 64 * SIZE_FACTOR | 0,
+gameOver = function(win) {
+	Player.health = 0;
+	started = false;
+	overlay.innerHTML = (win? "<h1>You WIN!</h1>Awesome!!!":"<h1>Game Over</h1>Better luck next time.")+"<br><br>Press Refresh (F5) to start over.";
+	overlay.style.display = "block";
+}
 
 initFu("Chasing Sprites", 4, function() {
 
@@ -160,7 +167,7 @@ isRightPressed = function() {
 	KEYS[68] || KEYS[70] // 'd' or 'f'
 }, 
 isUpPressed = function() {
-	return KEYS[32] || KEYS[87] || KEYS[69]; // Space or 'w' or 'e'
+	return KEYS[38] || KEYS[32] || KEYS[87] || KEYS[69]; // Up or Space or 'w' or 'e'
 };
 
 DC.onkeydown = updateFromKeys;
@@ -191,6 +198,10 @@ DC.onmouseup= function(e) {
 var updatePlayer = function(dt) {
 	var WATER_FRICTION = 0.76, AIR_FRICTION = .99;
 
+	if (Player.health <= 0) {
+		gameOver();
+		return;
+	}
 	var speed = isUpPressed() ? 1.65 : 0.6;
 
 	Player.leftFace = Player.angle > PI / 2 || Player.angle < -PI / 2
@@ -220,11 +231,11 @@ var updatePlayer = function(dt) {
 	Player.pos.add(dist);
 
 	Player.angle = Math.atan2(OffsetY+mouse.y - Player.pos.y + MAN_IMG_SIZE*.72, OffsetX+mouse.x - Player.pos.x);
-	var targetLookX = Math.cos(Player.angle)*CELL_SIZE*25,
-		targetLookY= sin(Player.angle)*CELL_SIZE*25;
+	var targetLookX = Math.cos(Player.angle)*CELL_SIZE*50,
+		targetLookY= sin(Player.angle)*CELL_SIZE*50;
 	
-	Player.lookY = avg(Player.lookY,targetLookY)
-	Player.lookX = avg(Player.lookX,targetLookX)
+	Player.lookY = Player.lookY*.9+.1*targetLookY;
+	Player.lookX = Player.lookX*.9+.1*targetLookX;
 
 	if (Player.pos.y > water_y) {
 		if (above) {

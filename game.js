@@ -8,6 +8,7 @@ var frameCount = 0,
 	t0 = -1,
 
 	prevFrameInd,
+	started=false,
 
 	PWind = function() {return Player.inWind ? wind : 0; },
 	Wind = function() {return wind },
@@ -41,7 +42,7 @@ jetpack = ParticlePointEmitter(350, {
 	sharpnessRandom: 12,
 	size: 30*SIZE_FACTOR|0,
 	finishSize: 75*SIZE_FACTOR|0,
-	colorEdge: 'rgba(40,20,10,0)',
+	colorEdge: [40,20,10,0],
 	sizeRandom: 5*SIZE_FACTOR,
 	speed: 4*SIZE_FACTOR,
 	speedRandom: 1*SIZE_FACTOR,
@@ -83,7 +84,7 @@ jetpack = ParticlePointEmitter(350, {
 	area: 0.1
 }),
 
-shotsPart = ParticlePointEmitter(50, {
+shotsPart = ParticlePointEmitter(450, {
 	position: vector_create(),
 	angle: 90,
 	angleRandom: 10,
@@ -92,7 +93,7 @@ shotsPart = ParticlePointEmitter(50, {
 //	finishColorRandom: [40,40,40,0],
 //	startColor: [220, 188, 88, 1],
 //	startColorRandom: [32, 35, 38, 0],
-	colorEdge: 'rgba(40,20,10,0)',
+//	colorEdge: 'rgba(40,20,10,0)',
 	gravity: 0,
 	lifeSpan: 1,
 	positionRandom: vector_create(3,3),
@@ -103,13 +104,12 @@ shotsPart = ParticlePointEmitter(50, {
 	sizeRandom: 5*SIZE_FACTOR,
 	speed: 4*SIZE_FACTOR,
 	speedRandom: 1*SIZE_FACTOR,
-	emissionRate: 140,
+	emissionRate: -1,
 	area: 0.1
 }),
 
 
 sparks = ParticlePointEmitter(250, {
-	active:false,
 	position: vector_create(),
 	angle: 0,
 	angleRandom: 360,
@@ -132,7 +132,6 @@ sparks = ParticlePointEmitter(250, {
 }),
 
 laser = ParticlePointEmitter(100, {
-	active: false,
 	gravity:0,
 	position: vector_create(),
 	startColor: [200, 50, 50, .8],
@@ -165,6 +164,7 @@ laser = ParticlePointEmitter(100, {
 					particle.timeToLive = 0;
 					sparks.addParticle(x, y);
 					alien.life--;
+					alien.shake = 5;
 				}
 			})
 			// check collision moutain
@@ -204,7 +204,6 @@ laser = ParticlePointEmitter(100, {
 
 
 snow = ParticlePointEmitter(SNOW_PARTICLES, {
-	active:true,
 	position: vector_create(Player.pos.x,-60*CELL_SIZE),
 	angle:90,
 	angleRandom: 180,
@@ -219,7 +218,7 @@ snow = ParticlePointEmitter(SNOW_PARTICLES, {
 	size: 20*SIZE_FACTOR|0,
 	finishSize: 10*SIZE_FACTOR|0,
 	sizeRandom: 2*SIZE_FACTOR,
-	colorEdge: 'rgba(40,40,40,0)',
+	colorEdge: [40,40,40,0],
 	speed: .2*SIZE_FACTOR,
 	speedRandom: 0.1,
 	startColor: [220, 220, 230, 1],
@@ -234,7 +233,6 @@ snow = ParticlePointEmitter(SNOW_PARTICLES, {
 
 
 clouds = ParticlePointEmitter(350, {
-	active:false,
 	position: vector_create(WORLD_WIDTH/2, -125*CELL_SIZE),
 	angle:0,
 	duration: -1,
@@ -268,7 +266,6 @@ clouds = ParticlePointEmitter(350, {
 }),
 
 smoke = ParticlePointEmitter(250, {
-	active:false,
 	position: vector_create(),
 	angle: -90,
 	angleRandom: 20,
@@ -284,7 +281,7 @@ smoke = ParticlePointEmitter(250, {
 	size: 45*SIZE_FACTOR|0,
 	finishSize: 60*SIZE_FACTOR|0,
 	sizeRandom: 6*SIZE_FACTOR,
-	colorEdge: 'transparent',
+	colorEdge: [0,0,0,0],
 	speed: 1.2*SIZE_FACTOR,
 	speedRandom: .1,
 	startColor: [220, 220, 220, 1],
@@ -295,13 +292,15 @@ smoke = ParticlePointEmitter(250, {
 
 
 water = ParticlePointEmitter(250, {
-	active:false,
 	position: vector_create(),
 	angle: -90,
 	angleRandom: 80,
 	duration: 0.15,
 	finishColor: [40, 70, 140, .2],
 	finishColorRandom: [10,10,10,0],
+	colorEdge: [140,140,255,0],
+	startColor: [60, 80, 120, .9],
+	startColorRandom: [12, 12, 12, 0],
 	gravity: vector_create(0,.5),
 	lifeSpan: 1.2,
 	lifeSpanRandom: 0.2,
@@ -313,10 +312,7 @@ water = ParticlePointEmitter(250, {
 	sizeRandom: 1,
 	emissionRate: 100,
 	speed: 2*SIZE_FACTOR,
-	colorEdge: 'rgba(140,140,255,0)',
 	speedRandom: .5,
-	startColor: [60, 80, 120, .9],
-	startColorRandom: [12, 12, 12, 0],
 	updateParticle: function(particle) {
 		if (particle.position.y > water_y && particle.direction.y > 0) {
 			particle.timeToLive = 0;
@@ -343,13 +339,15 @@ animFrame = function(t) {
 	prev_t = t;
 	var frameInd = (frameCount/3 |0) % WATER_FRAMES;  // TODO: anim water frames based on FPS
 
-	updatePlayer(dt);
+	if (started)
+		updatePlayer(dt);
 	var shouldShowSnow = Player.pos.y < snowRender;
 	
 	// no more updates to player pos at this frame - update camera to point to player
-	
-	OffsetY = Player.pos.y - HEIGHT/2 +Player.lookY |0;
-	OffsetX = Player.pos.x - WIDTH/2 +Player.lookX |0;
+	if (Player.health > 0) {
+		OffsetY = Player.pos.y - HEIGHT/2 +Player.lookY |0;
+		OffsetX = Player.pos.x - WIDTH/2 +Player.lookX |0;
+	}
 	spritesCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 	waterCtx.setTransform(1,0,0,1,-OffsetX, -OffsetY);
 	if (shouldShowSnow) {
@@ -357,49 +355,55 @@ animFrame = function(t) {
 		snow.position.x = Player.pos.x - wind*20*CELL_SIZE;
 	}
 	
-
-	jetpack.position.x = Player.pos.x -(Player.leftFace ? -5: 5);
-	jetpack.position.y = Player.pos.y-15;
-	updateWaves(dt);
-	laser.update(dt);
-	updateAliens(dt);   // aliens can add jetpack and smoke so must update before them
-	jetpack.update(dt);
-	sparks.update(dt);
-	water.update(dt); // water update must come after jetpack and laser because they can create water
-	smoke.update(dt); // same as water
-	if (shouldShowSnow) {
-		snow.update(dt);
-		clouds.update(dt);
-	}
-
+	if (started) {
+		if (water_y> WORLD_HEIGHT-200*CELL_SIZE) {
+			water_y -= 0.005*dt;
+		}
+		jetpack.position.x = Player.pos.x -(Player.leftFace ? -5: 5);
+		jetpack.position.y = Player.pos.y-15;
+		updateWaves(dt);
+		laser.update(dt);
+		updateAliens(dt);   // aliens can add jetpack and smoke so must update before them
+		shotsPart.update(dt);
+		jetpack.update(dt);
+		sparks.update(dt);
+		water.update(dt); // water update must come after jetpack and laser because they can create water
+		smoke.update(dt); // same as water
+		if (shouldShowSnow) {
+			snow.update(dt);
+			clouds.update(dt);
+		}
 	
-	waterCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
-	skySpritesCtx.clearRect(OffsetX,OffsetY, WIDTH,HEIGHT);
-	spritesCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
-
-	spritesCtx.save()
-	spritesCtx.globalCompositeOperation = "lighter";
-	jetpack.renderParticles(spritesCtx);
-	spritesCtx.restore()
-	sparks.renderParticles(spritesCtx);
-	spritesCtx.beginPath()
-	laser.renderParticles(spritesCtx);
-	spritesCtx.strokeStyle = 'rgba(250, 60, 60, .4)';
-	spritesCtx.lineWidth = 7;
-	spritesCtx.stroke();
-	spritesCtx.lineWidth = 2;
-	spritesCtx.strokeStyle = 'rgba(255,190,190,.9)';
-	spritesCtx.stroke();
-	smoke.renderParticles(spritesCtx);
-	renderAliens(spritesCtx);
-	if (shouldShowSnow) {
-		snow.renderParticles(skySpritesCtx);
-		clouds.renderParticles(skySpritesCtx);
+		waterCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
+		skySpritesCtx.clearRect(OffsetX,OffsetY, WIDTH,HEIGHT);
+		spritesCtx.clearRect(OffsetX,OffsetY,WIDTH,HEIGHT);
+	
+		spritesCtx.save()
+		spritesCtx.globalCompositeOperation = "lighter";
+		jetpack.renderParticles(spritesCtx);
+		shotsPart.renderParticles(spritesCtx);
+		spritesCtx.restore()
+		sparks.renderParticles(spritesCtx);
+		spritesCtx.beginPath()
+		laser.renderParticles(spritesCtx);
+		spritesCtx.strokeStyle = rgba([250,60,60,.4]);
+		spritesCtx.lineWidth = 7;
+		spritesCtx.stroke();
+		spritesCtx.lineWidth = 2;
+		spritesCtx.strokeStyle = rgba([255,190,190,.9]);
+		spritesCtx.stroke();
+		smoke.renderParticles(spritesCtx);
+		renderAliens(spritesCtx);
+		if (shouldShowSnow) {
+			snow.renderParticles(skySpritesCtx);
+			clouds.renderParticles(skySpritesCtx);
+		}
+	
+		if (yellow_man) {
+			draw_man(Player.pos, Player.angle);
+		}
 	}
 
-	if (yellow_man) {
-		draw_man(Player.pos, Player.angle);
-	}
 
 	waterCtx.save()
 	water.renderParticles(waterCtx);
@@ -414,10 +418,6 @@ animFrame = function(t) {
 		
 	
 	//water_frames[frameInd].draw(0,water_y, WIDTH, HEIGHT);
-	water_y -= 0.01*dt;
-	if (water_y< WORLD_HEIGHT-1000) {
-		water_y = WORLD_HEIGHT-10;
-	}
 
 
 	skyCtx.save()
@@ -430,15 +430,14 @@ animFrame = function(t) {
 
 //	mountainCtx.clearRect(0,0,WIDTH,HEIGHT)	
 //	drawToBackBuff(mountainCtx, OffsetX/CELL_SIZE|0, OffsetY/CELL_SIZE|0, 0,0, BB_WIDTH,BB_HEIGHT);
+	scrollBackground(OffsetX+WIDTH/2, OffsetY+HEIGHT/2);
 	redrawDirty();
-	scrollBackground(Player.pos.x+ Player.lookX, Player.pos.y+Player.lookY);
 	
-	
-    RQ(animFrame);
+	RQ(animFrame);
     
     frameCount++;
     // TODO: remove later
-	var text= "Wind: "+wind;
+	var text= "Health: "+Player.health+" out of "+Player.maxHealth+"   Wind: "+wind;
 	if (DBG) {
 		text+= "  Sky: "+skyX.toFixed(1)+","+skyY.toFixed(1);
     	text+= "  Player: "+Player.pos.x.toFixed(0)+","+Player.pos.y.toFixed(0);
@@ -450,16 +449,17 @@ animFrame = function(t) {
 			fps = (frameCount-prevCount)/5
 			prevCount = frameCount;
 		}
-		text += " fire: "+jetpack.particles.length;
+		text += " shotsPar: "+shotsPart.particles.length;
 		text += "  FPS: "+fps.toFixed(1)
 	}
-	mountainCtx.fillText(text, WIDTH/2,50);
+	mountainCtx.fillText(text, WIDTH/2,HEIGHT-50);
 	if (Player.engine_frozen) {
 		mountainCtx.fillText("Engine FROZEN!", WIDTH/2,HEIGHT/2 - 100);
 	}
 },
 
 progress = 0,
+overlay,
 initialize = function() {
 	if (initQueue.length == 0)
 		return;
@@ -495,9 +495,17 @@ initFu("Almost Ready...", 10, function() {
 	mountainCtx.fillStyle = '#fff';
 });
 
-initFu("Ready!", 1, function() {
-	DC.getElementById('overlay').style.display = "none"; // TODO: add class for fade transition
+
+initFu("Ready!", 2, function() {
+	var button = DC.getElementById('start');
+	button.value = "Press to Start!";
+	button.disabled = false;
+	overlay = DC.getElementById('overlay');
 	RQ(animFrame);
+	button.onclick = function() {
+		started = true;
+		overlay.style.display = "none"; // TODO: add class for fade transition
+	} 
 })
 
 initialize();

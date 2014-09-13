@@ -89,7 +89,7 @@ initFu("Digging Caves", 10, function() {
 		ctx = Ctx(level),
 		//these colors in level indicate what kind of cell to draw in background canvas
 		//Note: red channel need to be x<<5  from the cell type!
-		C_AIR = 'rgba(0,0,0,0)',
+		C_AIR = rgba([0,0,0,0]),
 		C_VEGETATION = '#400000',
 		C_GROUND = '#600000',
 		C_CAVE_FLOOR = '#800000',
@@ -281,11 +281,23 @@ setCellType = function(x,y,t) {
 	levelPixels[y*levelWidth+x]  = t;
 	x*=CELL_SIZE;
 	y*=CELL_SIZE;
-	var c2 = CELL_SIZE*2;
-	minDirtyX = min(minDirtyX, x-c2);
-	minDirtyY = min(minDirtyY, y-c2);
-	maxDirtyX = max(maxDirtyX, x+c2);
-	maxDirtyY = max(maxDirtyY, y+c2);
+	var c2 = CELL_SIZE*2,
+		minDirtyX2 = min(minDirtyX, x-c2);
+		minDirtyY2 = min(minDirtyY, y-c2);
+		maxDirtyX2 = max(maxDirtyX, x+c2);
+		maxDirtyY2 = max(maxDirtyY, y+c2);
+		
+	if ((maxDirtyY2 - minDirtyY2 > c2*100) || (maxDirtyX2 - minDirtyX2 > c2*100)) {
+		redrawDirty();
+		minDirtyX2 = min(minDirtyX, x-c2);
+		minDirtyY2 = min(minDirtyY, y-c2);
+		maxDirtyX2 = max(maxDirtyX, x+c2);
+		maxDirtyY2 = max(maxDirtyY, y+c2);
+	}
+	minDirtyX = minDirtyX2;
+	minDirtyY = minDirtyY2;
+	maxDirtyX = maxDirtyX2;
+	maxDirtyY = maxDirtyY2;
 },
 redrawDirty = function() {
 	if (minDirtyX < 10e6) {
