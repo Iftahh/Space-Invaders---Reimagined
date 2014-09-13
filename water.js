@@ -39,10 +39,6 @@ var updateWaves = function(dt) {
 },
 
 renderWater = function() {
-	if (OffsetY + 2*HEIGHT < water_y) {
-		// no need rendering water if the camera is pointing above it
-		return;
-	}
 	waterCtx.translate(OffsetX, 0);
 	waterCtx.beginPath();
 	waterCtx.moveTo(WIDTH, OffsetY+HEIGHT);
@@ -128,28 +124,6 @@ water_canvas = function(P) {
 	    
 	    displace(displace_x, displace_y, waterPixels, d, WIDTH, HEIGHT);
 	    
-//	    var i=0; // pixel index
-//		for (var y=0;y<HEIGHT;y++) {
-//			var s=3/(y+250);
-//			var yy0 = sq(y-700)*5;
-//		    for (var x=0; x<WIDTH; x++) {
-//		    	var yy=(y+sin((x*x + yy0)/100/HEIGHT+P)*15)*s;
-//		    	
-//		    	var _x = WIDTH*(x-yy)/s|0;
-//		    	var _y = HEIGHT*(y-yy)/s|0;
-//		    	
-//		    	
-//		    	d[i++] = waterPixels[_x+_y*WIDTH]//( (((x+WIDTH)*s+yy)&1)+(((2*WIDTH-x)*s+yy)&1))*127;
-//		    	d[i++] = waterPixels[_x+_y*WIDTH+1]//( ((5*((x+WIDTH)*s+yy))&1) + ((5*((WIDTH*2-x)*s+yy))&1))*127;
-//		  		d[i++] = waterPixels[_x+_y*WIDTH+2]//(((29*((x+WIDTH)*s+yy))&1)+((29*((WIDTH*2-x)*s+yy))&1))*127;
-//		    	// flat
-//	//	    	d[i++] = ( (((x+WIDTH)*s)&1)+(((2*WIDTH-x)*s)&1))*127;
-//	//	    	d[i++] = ( ((5*((x+WIDTH)*s))&1) + ((5*((WIDTH*2-x)*s))&1))*127;
-//	//	  		d[i++] = (((29*((x+WIDTH)*s))&1)+((29*((WIDTH*2-x)*s))&1))*127;
-//	//	 		
-//		  		d[i++] = U8;
-//		  	}
-//		  }
 		})
 };
 

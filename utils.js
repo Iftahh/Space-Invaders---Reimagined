@@ -95,7 +95,7 @@ DC.getElementById('overlay').style.width = WIDTH+"px";
 DC.getElementById('overlay').style.left = (-WIDTH>>1)+"px";
 
 var cont =  DC.getElementById('canvas_cont');
-range(5, function(i) { 
+range(6, function(i) { 
    var canvas = createCanvas();
    canvas.style.left = (-WIDTH>>1)+'px';
    cont.appendChild(canvas);
@@ -110,6 +110,7 @@ skySpritesCtx = contexts[1],
 mountainCtx = contexts[2],
 spritesCtx = contexts[3],
 waterCtx = contexts[4],
+overlayCtx = contexts[5],
 // Overlay context (overlay)
 
 

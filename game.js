@@ -9,6 +9,8 @@ var frameCount = 0,
 
 	prevFrameInd,
 	started=false,
+	textToPlayer,
+	showTextFor=0,
 
 	PWind = function() {return Player.inWind ? wind : 0; },
 	Wind = function() {return wind },
@@ -204,6 +206,7 @@ laser = ParticlePointEmitter(100, {
 
 
 snow = ParticlePointEmitter(SNOW_PARTICLES, {
+	active:true,
 	position: vector_create(Player.pos.x,-60*CELL_SIZE),
 	angle:90,
 	angleRandom: 180,
@@ -328,15 +331,31 @@ water = ParticlePointEmitter(250, {
 //	return springs[x/WATER_SPRING_DX | 0].height * m + (1-m)* springs[1+(x/WATER_SPRING_DX | 0)].height;
 //}
 
-
+prev_wind = wind,
+future_wind = 0,
+wind_transform_duration = 0,
+last_wind_change = 0,
 prev_t = 0,
-fps = 0, // DBG
+fps = 30, // DBG
 
 snowRender = SNOW_LEVEL*WORLD_HEIGHT+20*CELL_SIZE,
 
 animFrame = function(t) {
 	var dt = min(3.5, (t - prev_t)/32);
 	prev_t = t;
+	
+	if (t - last_wind_change < wind_transform_duration) {
+		wind = prev_wind+ (future_wind-prev_wind) * (t-last_wind_change) / wind_transform_duration;
+	}
+	else {
+		last_wind_change = t;
+		prev_wind = wind;
+		if (rnd() < .3)
+			future_wind = rndab(-2,2)+rndab(-2,2)+rndab(-1,1);
+		else
+			future_wind = wind;
+		wind_transform_duration = 5000*(rndab(2,4)+rnda(2)+rnda(2));
+	}
 	var frameInd = (frameCount/3 |0) % WATER_FRAMES;  // TODO: anim water frames based on FPS
 
 	if (started)
@@ -370,6 +389,7 @@ animFrame = function(t) {
 		water.update(dt); // water update must come after jetpack and laser because they can create water
 		smoke.update(dt); // same as water
 		if (shouldShowSnow) {
+			snow.active = fps > 22;
 			snow.update(dt);
 			clouds.update(dt);
 		}
@@ -405,10 +425,12 @@ animFrame = function(t) {
 	}
 
 
-	waterCtx.save()
+	waterCtx.save()  // need to save context because the stroke color and fill are changed in render particles
 	water.renderParticles(waterCtx);
 	waterCtx.restore()
-	if (Player.pos.y > water_y - HEIGHT) {
+	if (OffsetY > water_y - HEIGHT) {
+			// no need rendering water if the camera is pointing above it
+
 		if (prevFrameInd != frameInd) {
 			waterCtx.fillStyle = water_frames[frameInd];
 			prevFrameInd = frameInd;
@@ -437,24 +459,30 @@ animFrame = function(t) {
     
     frameCount++;
     // TODO: remove later
-	var text= "Health: "+Player.health+" out of "+Player.maxHealth+"   Wind: "+wind;
+	var text= "Health: "+Player.health+/*" out of "+Player.maxHealth+*/"   Wind: "+wind.toFixed(1);
+	if (t - t0 > 1000) {
+		t0 = t;
+		//wind = rndab(-10,10)
+		//console.log((frameCount-prevCount)/10, " avg FPS, wind:", wind);
+		fps = (frameCount-prevCount)
+		prevCount = frameCount;
+	}
+
 	if (DBG) {
 		text+= "  Sky: "+skyX.toFixed(1)+","+skyY.toFixed(1);
     	text+= "  Player: "+Player.pos.x.toFixed(0)+","+Player.pos.y.toFixed(0);
-    	text+= "  V: "+Player.v.x.toFixed(1)+","+Player.v.y.toFixed(1);
-		if (t - t0 > 5000) {
-			t0 = t;
-			//wind = rndab(-10,10)
-			//console.log((frameCount-prevCount)/10, " avg FPS, wind:", wind);
-			fps = (frameCount-prevCount)/5
-			prevCount = frameCount;
-		}
-		text += " shotsPar: "+shotsPart.particles.length;
+//    	text+= "  V: "+Player.v.x.toFixed(1)+","+Player.v.y.toFixed(1);
+//		text += " shotsPar: "+shotsPart.particles.length;
 		text += "  FPS: "+fps.toFixed(1)
 	}
-	mountainCtx.fillText(text, WIDTH/2,HEIGHT-50);
-	if (Player.engine_frozen) {
-		mountainCtx.fillText("Engine FROZEN!", WIDTH/2,HEIGHT/2 - 100);
+	overlayCtx.clearRect(0,0,WIDTH,HEIGHT);
+	overlayCtx.fillText(text, WIDTH/2,50);
+	if (showTextFor > 0 && textToPlayer) {
+		showTextFor -= dt;
+		overlayCtx.fillText(textToPlayer, WIDTH/2-Player.lookX, HEIGHT/2 -Player.lookY- 100);
+	}
+	else if (Player.engine_frozen) {
+		overlayCtx.fillText("Engine FROZEN!", WIDTH/2 -Player.lookX, HEIGHT/2- Player.lookY-100);
 	}
 },
 
@@ -466,16 +494,22 @@ initialize = function() {
 	var todo = initQueue.shift();
 	var text = todo[0];
 	var pg = todo[1];
+	if (initQueue.length == 0)
+		progress = 100;
+	else
+		progress+=pg;
 	DC.getElementById("text").textContent= text;
-	progress+=pg;
 	if (DBG) {
 		console.log("Progress: "+progress+"  text: "+text+"  "+Date())
 		if (progress > 100) alert("prgs at "+progress+" text is "+text);
 	}
 	DC.getElementById('pbar-in').style.width = (progress*2)+'px'
 
-	todo[2]();
-	setTimeout(initialize, 0);
+	setTimeout(function() {
+		todo[2]();
+		setTimeout(initialize, 0);
+	})
+	
 };
 
 
@@ -490,9 +524,14 @@ initFu("Almost Ready...", 10, function() {
 		p.deltaSize = 0;
 	})
 	
-	mountainCtx.font="20px Verdana";
-	mountainCtx.textAlign = 'center';
-	mountainCtx.fillStyle = '#fff';
+	overlayCtx.font="20px Verdana";
+	overlayCtx.textAlign = 'center';
+	overlayCtx.fillStyle = '#eec';
+	overlayCtx.shadowColor = "#222";
+	overlayCtx.shadowBlur = 4;
+	overlayCtx.shadowOffsetX = 1;
+	overlayCtx.shadowOffsetY = 1;
+
 });
 
 

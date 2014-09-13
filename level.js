@@ -287,17 +287,19 @@ setCellType = function(x,y,t) {
 		maxDirtyX2 = max(maxDirtyX, x+c2);
 		maxDirtyY2 = max(maxDirtyY, y+c2);
 		
-	if ((maxDirtyY2 - minDirtyY2 > c2*100) || (maxDirtyX2 - minDirtyX2 > c2*100)) {
+	if ((maxDirtyY2 - minDirtyY2 > c2*50) || (maxDirtyX2 - minDirtyX2 > c2*50)) {
 		redrawDirty();
-		minDirtyX2 = min(minDirtyX, x-c2);
-		minDirtyY2 = min(minDirtyY, y-c2);
-		maxDirtyX2 = max(maxDirtyX, x+c2);
-		maxDirtyY2 = max(maxDirtyY, y+c2);
+		minDirtyX = x-c2;
+		minDirtyY = y-c2;
+		maxDirtyX = x+c2;
+		maxDirtyY = y+c2;
 	}
-	minDirtyX = minDirtyX2;
-	minDirtyY = minDirtyY2;
-	maxDirtyX = maxDirtyX2;
-	maxDirtyY = maxDirtyY2;
+	else {
+		minDirtyX = minDirtyX2;
+		minDirtyY = minDirtyY2;
+		maxDirtyX = maxDirtyX2;
+		maxDirtyY = maxDirtyY2;
+	}
 },
 redrawDirty = function() {
 	if (minDirtyX < 10e6) {

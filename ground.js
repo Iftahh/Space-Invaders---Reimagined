@@ -70,17 +70,14 @@ initFu(TXT, 10, function() {
 	ice_pattern = mountainCtx.createPattern(ice_canvas, 'repeat')
 	
 	
-	addWaveFrame()
-});
-
-// drawImg(mountainCtx, cave_canvas, 0,0);
-initFu(TXT, 10, function() {
-
 	ground_canvas = renderByRGB(
 			painty([], SZ+7, SZ+7,  80,140, -2,4, -2,4, 2, 300),
 			painty([], SZ+7, SZ+7,  80,140, -2,4, -2,4, -1, 300),
 			painty([], SZ+7, SZ+7,  40, 80, -2,4, -2,4, -2, 300))
-	
+});
+
+// drawImg(mountainCtx, cave_canvas, 0,0);
+initFu(TXT, 10, function() {
 	var cave_floor_canvas = renderByRGB(
 			painty([], SZ, SZ, 30, 50, 1,4, 1,4, 5, 100),
 			painty([], SZ, SZ, 120, 180, 1,4, 1,4, -2, 200),
@@ -123,6 +120,5 @@ initFu(TXT, 10, function() {
 
 	cave_canvas = ground_canvas =ground_ctx= cave_ctx= 0; // free mem
 
-	addWaveFrame()
 });
 

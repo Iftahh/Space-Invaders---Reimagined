@@ -3,13 +3,14 @@
 
 var Player = {
 	pos : vector_create(50 * CELL_SIZE, 900 * CELL_SIZE), // start position - near water
-//	 pos: vector_create(820*CELL_SIZE, 30*CELL_SIZE), // start position - top
+//	pos : vector_create(220 * CELL_SIZE, 490 * CELL_SIZE), // start position - top left
+//	 pos: vector_create(820*CELL_SIZE, 30*CELL_SIZE), // start position - top mountain
 	// of mountain
 	v : vector_create(),
 	lookY:0,
 	lookX:0,
-	health: 25,
-	maxHealth: 25,
+	health: 30,
+//	maxHealth: 30,
 	laser_temperature: 0
 },
 LASER_COOLDOWN = 5, LASER_OVERHEAT = 4,
@@ -150,6 +151,32 @@ checkPlayerCollision = function() {
 		Player.onGround = false;
 	}
 },
+hitPlayer=  function() {
+	Player.health--;
+	showTextFor = 50;
+	textToPlayer = "Ouch!";
+}
+/***
+ * sx: screen coordinate of wave, 
+ * vy: vertical velocity of collider with water
+ * wx,wy: world coordinates of water spray
+ */
+splashAt = function(sx, vy, wx,wy) { // sx is in screen coordinate
+	if (sx < 0 || sx > WIDTH) {
+		return;
+	}
+	springs[springs.length * (1 - sx / WIDTH) | 0].velocity = 22 * vy;
+	if (fps > 20) {
+		// splash some droplets
+		water.active = true;
+		water.position.x = wx;
+		water.position.y = wy;
+		water.speed = 0.75 * vy;
+		water.emissionRate = 20 * abs(vy);
+	}
+	// water.angle = Math.atan2(-abs(Player.v.y), 2*Player.v.x) *
+	// 180/PI;
+}
 
 KEYS = {},
 
@@ -172,10 +199,129 @@ isUpPressed = function() {
 
 DC.onkeydown = updateFromKeys;
 DC.onkeyup = updateFromKeys;
+/*
+DC.ontouchstart = function(event) {
+    var ct =  event.changedTouches;
+    var jsMove = null;
+    var jsButton = null;
+    each(ct, function($) {
+        var x = $.clientX- TchCan.offsetLeft;
+        var y = $.clientY-TchCan.offsetTop;
+        if (x < width/2 - 20) {
+            jsMove = [$.identifier, x,y];
+        }
+        else if (x > width/2 + 20) {
+            jsButton = [$.identifier, x,y];
+        }
+    })
+    if (jsMove != null) {
+        joystickMove(jsMove);
+    }
+    if (jsButton != null) {
+        joystickButton(jsButton)
+    }
+    event.preventDefault();
+};
 
-DC.body.addEventListener('touchmove', function(event) {
-	event.preventDefault();
-}, false);
+var joystickMove = function(jsMove) {
+    joystick.move = jsMove;
+    var x = jsMove[1];
+    var y = jsMove[2];
+    Tch.clearRect(0,0,width/2,height);
+    Tch.beginPath();
+    Tch.arc(joystick.x, joystick.y, 20, 0, TPI);
+    Tch.moveTo(joystick.x, joystick.y);
+    Tch.lineTo(x, y);
+    Tch.arc(x,y, 35, 0, TPI);
+    Tch.stroke();
+    Tch.fill();
+    if (x < joystick.x-15) {
+        Player.left = 1;
+        Player.right = 0;
+        Player.up = 0;
+        Player.down = 0;
+    }
+    else if (x > joystick.x +15) {
+        Player.left = 0;
+        Player.right = 1;
+        Player.up = 0;
+        Player.down = 0;
+    }
+    else {
+        Player.left = 0;
+        Player.right = 0;
+    }
+
+    if (!Player.left && !Player.right) {
+        if (y < joystick.y-15) {
+            Player.up = 1;
+            Player.down = 0;
+        }
+        else if (y > joystick.y +15) {
+            Player.up = 0;
+            Player.down = 1;
+        }
+        else {
+            Player.up = 0;
+            Player.down = 0;
+        }
+    }
+    event.preventDefault();
+}
+
+var joystickButton=function(button) {
+    Player.jump = 1;
+    joystick.button= button;
+    Tch.clearRect(width/2,0,width/2,height);
+    Tch.beginPath()
+    Tch.arc(button[1],button[2], 35, 0, TPI);
+    Tch.fill();
+}
+
+DC.ontouchmove = function(event) {
+    var ct =  event.changedTouches;
+    var jsMove = null;
+    var jsButton = null;
+    each(ct, function($) {
+        var x = $.clientX- TchCan.offsetLeft;
+        var y = $.clientY-TchCan.offsetTop;
+        if (x < width/2 - 20) {
+            jsMove = [$.identifier, x,y];
+        }
+        else if (x > width/2 + 20) {
+            jsButton = [$.identifier, x,y];
+        }
+    })
+    if (jsMove != null) {
+        joystickMove(jsMove)
+    }
+    if (jsButton != null) {
+        joystickButton(jsButton)
+    }
+    event.preventDefault();
+}
+
+DC.ontouchend = function(event) {
+    var ct =  event.changedTouches;
+    each(ct, function($) {
+        if (joystick.move != null && $.identifier == joystick.move[0]) {
+            joystick.move = null;
+            Player.left = 0;
+            Player.right = 0;
+            Player.up = 0;
+            Player.down = 0;
+            Tch.beginPath();
+            Tch.clearRect(0,0,width/2,height);
+            Tch.arc(joystick.x, joystick.y, 30, 0, TPI);
+            Tch.fill()
+        }
+        if (joystick.button != null && $.identifier == joystick.button[0]) {
+            joystick.button = null;
+            Player.jump = 0;
+            Tch.clearRect(width/2,0,width/2,height);
+        }
+    });
+};*/
 
 var mouse = {
 	x : 0,
@@ -239,17 +385,7 @@ var updatePlayer = function(dt) {
 
 	if (Player.pos.y > water_y) {
 		if (above) {
-			var x = WIDTH / 2 - Player.lookX;// Player.pos.x;
-			// if (x < WIDTH && x>0)
-			springs[springs.length * (1 - x / WIDTH) | 0].velocity = 22 * Player.v.y;
-			// splash some droplets
-			water.active = true;
-			water.position.x = Player.pos.x;
-			water.position.y = Player.pos.y + MAN_IMG_SIZE - 8;
-			water.speed = 0.75 * Player.v.y;
-			water.emissionRate = 20 * abs(Player.v.y);
-			// water.angle = Math.atan2(-abs(Player.v.y), 2*Player.v.x) *
-			// 180/PI;
+			splashAt(WIDTH / 2 - Player.lookX, Player.v.y, Player.pos.x, Player.pos.y+MAN_IMG_SIZE-2*CELL_SIZE)
 		}
 		if (Player.pos.y > water_y + HEIGHT * .5)
 			Player.pos.y = 0;
